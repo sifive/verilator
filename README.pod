@@ -3,6 +3,14 @@
 
 =pod
 
+=head1 FORK NOTES
+
+This is a fork of the Verilator project which adds some steps for automatically
+creating a .deb package from a release. Travis is configured to automatically
+run a build and upload a release to GitHub whenever a tag is created. You can
+simply cherry-pick the latest commit on top of a real Verilator release and
+create a tag from that.
+
 =head1 NAME
 
 This is the Verilator package README file.
