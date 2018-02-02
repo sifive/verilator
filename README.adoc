@@ -1,4 +1,27 @@
 // Github doesn't render images unless absolute URL
+
+= SIFIVE FORK NOTES
+This is a fork of the Verilator project which adds some steps for automatically
+creating .deb and .rpm packages from a release tag. Travis is configured to
+run a build and upload a release to GitHub whenever a tag is created. You can
+simply cherry-pick the latest commit on top of a real Verilator release and
+create a tag from that.
+
+[source,sh]
+----
+# Note: You should replace 4.028 with whichever version you are trying to use.
+git remote add verilator git@github.com:verilator/verilator.git
+git fetch verilator
+git checkout v4.028
+git cherry-pick origin/master -X theirs
+git tag 4.028-0sifive1
+git push origin 4.028-0sifive1
+----
+
+For posterity, the old `master` branch from this SiFive fork with the old
+instructions for performing a release is available at
+https://github.com/sifive/verilator/tree/old-master-2018-02-02.
+
 :!toc:
 
 ifdef::env-github[]
