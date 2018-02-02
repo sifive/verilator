@@ -3,6 +3,21 @@
 
 =pod
 
+=head1 FORK NOTES
+
+This is a fork of the Verilator project which adds some steps for automatically
+creating .deb and .rpm packages from a release tag. Travis is configured to
+run a build and upload a release to GitHub whenever a tag is created. You can
+simply cherry-pick the latest commit on top of a real Verilator release and
+create a tag from that.
+
+    git remote add veripool http://git.veripool.org/git/verilator
+    git fetch veripool
+    git checkout verilator_4_014
+    git cherry-pick origin/master
+    git tag 4.014-0sifive1
+    git push origin 4.014-0sifive1
+
 =head1 NAME
 
 This is the Verilator package README file.
