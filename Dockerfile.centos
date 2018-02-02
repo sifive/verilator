@@ -1,0 +1,14 @@
+FROM centos:7
+RUN yum update -y && yum install -y \
+  autoconf \
+  bison \
+  flex \
+  gcc-c++ \
+  git \
+  glibc-static \
+  libstdc++-static \
+  perl-version \
+  rsync \
+  rpm-build \
+  make
+WORKDIR /usr/src/app
