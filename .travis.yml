@@ -2,16 +2,20 @@ services:
   - docker
 
 before_install:
-  - docker build -t verilator .
+  - docker build -f Dockerfile.ubuntu -t verilator-ubuntu .
+  - docker build -f Dockerfile.centos -t verilator-centos .
 
 script:
-  - docker run --rm -e PACKAGE_VERSION=${TRAVIS_TAG:-0.0UNTAGGED} -v $PWD:/usr/src/app verilator ./build-deb.sh
+  - docker run --rm -e PACKAGE_VERSION=${TRAVIS_TAG:-0.0-UNTAGGED} -v $PWD:/usr/src/app verilator-ubuntu ./build-deb.sh
+  - docker run --rm -e PACKAGE_VERSION=${TRAVIS_TAG:-0.0-UNTAGGED} -v $PWD:/usr/src/app verilator-centos ./build-rpm.sh
 
 deploy:
   provider: releases
   api_key:
     secure: ltStIEenLA7CgOv5Y48614kqf48d3zyPxsRDeT78dFSb/obmnMarafaYVjCWpn/1/NI3YLcEHkmrenousB/oU9d8GNIAK81pElBzzIEj0ZvFvpV/fS0+Dwk6N8EjWKbECkkeka2jL7B7ycGkkcHgd8VoCGsuMjNVFXetmxC5q1GRaXQ3Yh3xDXDmcQh402w3p/AR2sEo6cjZFUIfjHtVyTILKkMk1LQp5kdcHoAOJrFE5KNnCOJFutT51jJc+tp9IWNuqjNOcekMCgdYZ4i1BMGtBb2nqA1m4oZyECgnBD7HoB2swaRv9ro4HjHBnnuaaaOX03UTcGwY5i1ccQB0JDwjQruFR8LehqSoVHBUu+dvJ40XuhCIkAAQ/O9e27289p4Y2Zrsxd2W5fFIxUFCFMYqVG+LjKEpwYq0V+TTPTPx58pT749h2wAAuJH7YKVbbbIorzkmqcHuDr86PQ+60gfPbH76iUUcem39WDvEnVNywDPhNEOxgxJx6pVAHsJD15YAWChH+TbDQkXm4M5L+fghuoywoyESzO1JkckTjSYkGZd1ouhtNFKY8wKYPVXGBLXs0Agi6tF+gwKZfyi3gqDIXXD0eKqW4K2RvEtJQh1xt5s8zh826CdBxBEygOO0iIIuheDjOep/jl34NOi0WvfzxLbDaibGUhg52LCkgMQ=
-  file: verilator_${TRAVIS_TAG}_amd64.deb
+  file:
+    - verilator_${TRAVIS_TAG}_amd64.deb
+    - verilator_${TRAVIS_TAG}_x86_64.rpm
   skip_cleanup: true
   on:
     repo: sifive/verilator

@@ -3,10 +3,12 @@
 set -eux
 
 pkg_arch=amd64
-pkg_dir=$(realpath ./verilator_${PACKAGE_VERSION}_${pkg_arch})
+pkg_distro=ubuntu
+pkg_dir=$(realpath ./verilator_${PACKAGE_VERSION}_${pkg_arch}_${pkg_distro})
 
 autoconf
 ./configure
+make clean
 make
 make test
 make install DESTDIR=$pkg_dir
