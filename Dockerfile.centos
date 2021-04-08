@@ -11,5 +11,6 @@ RUN yum update -y && yum install -y \
   perl-Digest-MD5 \
   rsync \
   rpm-build \
-  make
+  make \
+  python3
 WORKDIR /usr/src/app
