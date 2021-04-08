@@ -14,6 +14,11 @@ git remote add verilator git@github.com:verilator/verilator.git
 git fetch verilator
 git checkout v4.028
 git cherry-pick origin/master -X theirs
+# git will likely want you to resolve the fact that the README.adoc and
+# .travis.yaml files are not in the repo here.
+git add README.adoc
+git add .travis.yaml
+git cherry-pick --continue
 git tag 4.028-0sifive1
 git push origin 4.028-0sifive1
 ----
