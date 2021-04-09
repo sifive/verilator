@@ -65,3 +65,7 @@ ci/
 obj_dir.*
 TAGS
 .*~
+Dockerfile.*
+README.adoc
+build-deb.sh
+build-rpm.sh
