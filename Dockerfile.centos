@@ -6,6 +6,9 @@ RUN yum update -y && yum install -y \
   gcc-c++ \
   git \
   perl-version \
+  perl-Time-HiRes \
+  rsync \
+  rpm-build \
   make \
   python3
 WORKDIR /usr/src/app
