@@ -5,6 +5,7 @@ RUN yum update -y && yum install -y \
   flex \
   gcc-c++ \
   git \
+  ccache \
   perl-version \
   make \
   python3
