@@ -17,11 +17,11 @@ module t (/*AUTOARG*/
    // This demonstrates how warning disables should be propagated across module boundaries.
 
    m1 m1 (/*AUTOINST*/
-	  // Outputs
-	  .q				(q[1:0]),
-	  // Inputs
-	  .clk				(clk),
-	  .d				(d));
+          // Outputs
+          .q                            (q[1:0]),
+          // Inputs
+          .clk                          (clk),
+          .d                            (d));
 endmodule
 
 module m1
@@ -32,11 +32,11 @@ module m1
    );
 
    m2 m2 (/*AUTOINST*/
-	  // Outputs
-	  .q				(q[1:0]),
-	  // Inputs
-	  .clk				(clk),
-	  .d				(d));
+          // Outputs
+          .q                            (q[1:0]),
+          // Inputs
+          .clk                          (clk),
+          .d                            (d));
 endmodule
 
 module m2
@@ -45,8 +45,10 @@ module m2
    input d,
    // Due to bug the below disable used to be ignored.
    // verilator lint_off UNOPT
+   // verilator lint_off UNOPTFLAT
    output reg [1:0] q
    // verilator lint_on UNOPT
+   // verilator lint_on UNOPTFLAT
    );
 
    always @* begin

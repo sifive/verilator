@@ -9,74 +9,73 @@
 //
 //*************************************************************************
 
+#include <cinttypes>
+#include <cstdint>
 #include <cstdio>
 #include <cstring>
 #include "svdpi.h"
 
-#ifdef _WIN32
-# define T_PRI64 "I64"
-#else  // Linux or compliant Unix flavors
-# define T_PRI64 "ll"
-#endif
-
 //======================================================================
 
 #if defined(VERILATOR)
-# ifdef T_DPI_EXPORT_NOOPT
-#  include "Vt_dpi_export_noopt__Dpi.h"
-# else
-#  include "Vt_dpi_export__Dpi.h"
-# endif
-#elif defined(VCS)
-# include "../vc_hdrs.h"
-#elif defined(CADENCE)
-# define NEED_EXTERNS
+#ifdef T_DPI_EXPORT_NOOPT
+#include "Vt_dpi_export_noopt__Dpi.h"
 #else
-# error "Unknown simulator for DPI test"
+#include "Vt_dpi_export__Dpi.h"
 #endif
+#elif defined(VCS)
+#include "../vc_hdrs.h"
+#elif defined(CADENCE)
+#define NEED_EXTERNS
+#else
+#error "Unknown simulator for DPI test"
+#endif
+// clang-format on
 
 #ifdef NEED_EXTERNS
 
 extern "C" {
-    extern int dpix_run_tests();
+extern int dpix_run_tests();
 
-    extern int dpix_t_int(int i, int* o);
-    extern int dpix_t_renamed(int i, int* o);
+extern int dpix_t_int(int i, int* o);
+extern int dpix_t_renamed(int i, int* o);
 
-    extern int dpix_int123();
+extern int dpix_int123();
 
-    extern unsigned char dpix_f_bit(unsigned char i);
-    extern svBitVecVal   dpix_f_bit15(const svBitVecVal* i);
-    extern svBitVecVal   dpix_f_bit48(const svBitVecVal* i);
-    extern int           dpix_f_int(int i);
-    extern char          dpix_f_byte(char i);
-    extern short int     dpix_f_shortint(short int i);
-    extern long long     dpix_f_longint(long long i);
-    extern void*         dpix_f_chandle(void* i);
+extern unsigned char dpix_f_bit(unsigned char i);
+extern svBitVecVal dpix_f_bit15(const svBitVecVal* i);
+extern svBitVecVal dpix_f_bit48(const svBitVecVal* i);
+extern int dpix_f_int(int i);
+extern char dpix_f_byte(char i);
+extern short int dpix_f_shortint(short int i);
+extern long long dpix_f_longint(long long i);
+extern void* dpix_f_chandle(void* i);
 
-    extern int dpix_sub_inst(int i);
+extern int dpix_sub_inst(int i);
 
-    extern void dpix_t_reg(svLogic i, svLogic* o);
-    extern void dpix_t_reg15(const svLogicVecVal* i, svLogicVecVal* o);
-    extern void dpix_t_reg95(const svLogicVecVal* i, svLogicVecVal* o);
-    extern void dpix_t_integer(const svLogicVecVal* i, svLogicVecVal* o);
-    extern void dpix_t_time(const svLogicVecVal* i, svLogicVecVal* o);
+extern void dpix_t_reg(svLogic i, svLogic* o);
+extern void dpix_t_reg15(const svLogicVecVal* i, svLogicVecVal* o);
+extern void dpix_t_reg95(const svLogicVecVal* i, svLogicVecVal* o);
+extern void dpix_t_integer(const svLogicVecVal* i, svLogicVecVal* o);
+extern void dpix_t_time(const svLogicVecVal* i, svLogicVecVal* o);
 }
 
 #endif
 
 //======================================================================
 
+// clang-format off
 #define CHECK_RESULT(type, got, exp)            \
     if ((got) != (exp)) {                       \
         printf("%%Error: %s:%d:", __FILE__, __LINE__); \
-        union { type a; long long l; } u;       \
+        union { type a; uint64_t l; } u;          \
         u.l = 0; u.a = got; if (u.a) {/*used*/} \
-        printf(" GOT = %" T_PRI64 "x", u.l);    \
+        printf(" GOT = %" PRIx64, u.l);    \
         u.l = 0; u.a = exp; if (u.a) {/*used*/} \
-        printf("  EXP = %" T_PRI64 "x\n", u.l); \
+        printf("  EXP = %" PRIx64 "\n", u.l); \
         return __LINE__; \
     }
+// clang-format on
 #define CHECK_RESULT_NNULL(got) \
     if (!(got)) { \
         printf("%%Error: %s:%d: GOT = %p   EXP = !NULL\n", __FILE__, __LINE__, (got)); \
@@ -107,18 +106,17 @@ int dpix_run_tests() {
 #ifdef VERILATOR
     static int didDump = 0;
     if (didDump++ == 0) {
-# ifdef TEST_VERBOSE
+#ifdef TEST_VERBOSE
         Verilated::internalsDump();
-# endif
+#endif
     }
 #endif
 
 #ifndef CADENCE  // Unimplemented; how hard is it?
     printf("svDpiVersion: %s\n", svDpiVersion());
-    CHECK_RESULT(bool,
-                 strcmp(svDpiVersion(), "1800-2005")==0
-                 || strcmp(svDpiVersion(), "P1800-2005")==0
-                 , 1);
+    CHECK_RESULT(
+        bool,
+        strcmp(svDpiVersion(), "1800-2005") == 0 || strcmp(svDpiVersion(), "P1800-2005") == 0, 1);
 #endif
 
     CHECK_RESULT(int, dpix_int123(), 0x123);
@@ -173,7 +171,7 @@ int dpix_run_tests() {
         CHECK_RESULT(int, o_vec96[2], ~i_vec96[2]);
     }
 
-    extern void dpix_t_reg(svLogic i, svLogic* o);
+    extern void dpix_t_reg(svLogic i, svLogic * o);
     {
         svLogic i = 0;
         svLogic o;
@@ -184,7 +182,9 @@ int dpix_run_tests() {
         CHECK_RESULT(svLogic, o, 0);
     }
     {
-        svLogicVecVal i[1]; i[0].aval = 0x12; i[0].bval = 0;
+        svLogicVecVal i[1];
+        i[0].aval = 0x12;
+        i[0].bval = 0;
         svLogicVecVal o[1];
         dpix_t_reg15(i, o);
         CHECK_RESULT(int, o[0].aval, (~i[0].aval) & 0x7fff);
@@ -192,9 +192,12 @@ int dpix_run_tests() {
     }
     {
         svLogicVecVal i[3];
-        i[0].aval = 0x72912312; i[0].bval = 0;
-        i[1].aval = 0xab782a12; i[1].bval = 0;
-        i[2].aval = 0x8a413bd9; i[2].bval = 0;
+        i[0].aval = 0x72912312;
+        i[0].bval = 0;
+        i[1].aval = 0xab782a12;
+        i[1].bval = 0;
+        i[2].aval = 0x8a413bd9;
+        i[2].bval = 0;
         svLogicVecVal o[3];
         dpix_t_reg95(i, o);
         CHECK_RESULT(int, o[0].aval, ~i[0].aval);
@@ -207,8 +210,10 @@ int dpix_run_tests() {
 #if !defined(VCS) && !defined(CADENCE)
     {
         svLogicVecVal i[2];
-        i[0].aval = 0x72912312; i[0].bval = 0;
-        i[1].aval = 0xab782a12; i[1].bval = 0;
+        i[0].aval = 0x72912312;
+        i[0].bval = 0;
+        i[1].aval = 0xab782a12;
+        i[1].bval = 0;
         svLogicVecVal o[2];
         dpix_t_time(i, o);
         CHECK_RESULT(int, o[0].aval, ~i[0].aval);

@@ -11,7 +11,7 @@
 #     add_executable(simulator <your-c-sources>)
 #     verilate(simulator SOURCES <your-hdl-sources>)
 #
-# Copyright 2003-2020 by Wilson Snyder. This program is free software; you
+# Copyright 2003-2022 by Wilson Snyder. This program is free software; you
 # can redistribute it and/or modify it under the terms of either the GNU
 # Lesser General Public License Version 3 or the Perl Artistic License
 # Version 2.0.
@@ -84,6 +84,12 @@ define_property(TARGET
 )
 
 define_property(TARGET
+  PROPERTY VERILATOR_TRACE_THREADED
+  BRIEF_DOCS "Verilator multithread tracing enabled"
+  FULL_DOCS "Verilator multithread tracing enabled"
+)
+
+define_property(TARGET
   PROPERTY VERILATOR_COVERAGE
   BRIEF_DOCS "Verilator coverage enabled"
   FULL_DOCS "Verilator coverage enabled"
@@ -113,10 +119,17 @@ define_property(TARGET
   FULL_DOCS "Verilator SystemC enabled"
 )
 
+define_property(TARGET
+    PROPERTY VERILATOR_TRACE_STRUCTS
+    BRIEF_DOCS "Verilator trace structs enabled"
+    FULL_DOCS "Verilator trace structs enabled"
+)
+
+
 function(verilate TARGET)
-  cmake_parse_arguments(VERILATE "COVERAGE;TRACE;TRACE_FST;SYSTEMC"
-                                 "PREFIX;TOP_MODULE;THREADS;DIRECTORY"
-                                 "SOURCES;VERILATOR_ARGS;INCLUDE_DIRS;OPT_SLOW;OPT_FAST"
+  cmake_parse_arguments(VERILATE "COVERAGE;TRACE;TRACE_FST;SYSTEMC;TRACE_STRUCTS"
+                                 "PREFIX;TOP_MODULE;THREADS;TRACE_THREADS;DIRECTORY"
+                                 "SOURCES;VERILATOR_ARGS;INCLUDE_DIRS;OPT_SLOW;OPT_FAST;OPT_GLOBAL"
                                  ${ARGN})
   if (NOT VERILATE_SOURCES)
     message(FATAL_ERROR "Need at least one source")
@@ -129,11 +142,15 @@ function(verilate TARGET)
   endif()
 
   if (VERILATE_TOP_MODULE)
-    list(APPEND VERILATOR_ARGS --top-module ${VERILATE_TOP_MODULE})
+    list(APPEND VERILATOR_ARGS --top ${VERILATE_TOP_MODULE})
   endif()
 
   if (VERILATE_THREADS)
     list(APPEND VERILATOR_ARGS --threads ${VERILATE_THREADS})
+  endif()
+
+  if (VERILATE_TRACE_THREADS)
+    list(APPEND VERILATOR_ARGS --trace-threads ${VERILATE_TRACE_THREADS})
   endif()
 
   if (VERILATE_COVERAGE)
@@ -158,12 +175,18 @@ function(verilate TARGET)
     list(APPEND VERILATOR_ARGS --cc)
   endif()
 
+  if (VERILATE_TRACE_STRUCTS)
+      list(APPEND VERILATOR_ARGS --trace-structs)
+  endif()
+
   foreach(INC ${VERILATE_INCLUDE_DIRS})
     list(APPEND VERILATOR_ARGS -y "${INC}")
   endforeach()
 
   string(TOLOWER ${CMAKE_CXX_COMPILER_ID} COMPILER)
-  if (NOT COMPILER MATCHES "msvc|clang")
+  if (COMPILER STREQUAL "appleclang")
+    set(COMPILER clang)
+  elseif (NOT COMPILER MATCHES "^msvc$|^clang$")
     set(COMPILER gcc)
   endif()
 
@@ -219,14 +242,8 @@ function(verilate TARGET)
                           ${${VERILATE_PREFIX}_CLASSES_SLOW}
                           ${${VERILATE_PREFIX}_SUPPORT_FAST}
                           ${${VERILATE_PREFIX}_SUPPORT_SLOW})
-  foreach(GENERATED_C_SOURCE ${GENERATED_C_SOURCES})
-    get_filename_component(C_OUTPUT_NAME_WE "${GENERATED_C_SOURCE}" NAME_WE)
-    if(C_OUTPUT_NAME_WE MATCHES ".*Trace.*")
-      continue()
-    endif()
-    list(APPEND GENERATED_H_SOURCES "${VDIR}/${C_OUTPUT_NAME_WE}.h")
-  endforeach()
-  set(GENERATED_SOURCES ${GENERATED_C_SOURCES} ${GENERATED_H_SOURCES})
+  # No need for .h's as the .cpp will get written same time
+  set(GENERATED_SOURCES ${GENERATED_C_SOURCES})
 
   add_custom_command(OUTPUT ${GENERATED_SOURCES} "${VCMAKE}"
                      COMMAND ${VERILATOR_COMMAND}
@@ -242,6 +259,15 @@ function(verilate TARGET)
   if (${VERILATE_PREFIX}_THREADS)
     # If any verilate() call specifies THREADS, define VL_THREADED in the final build
     set_property(TARGET ${TARGET} PROPERTY VERILATOR_THREADED ON)
+  endif()
+
+  if (${VERILATE_PREFIX}_TRACE_THREADS)
+    # If any verilate() call specifies TRACE_THREADS, define VL_TRACE_THREADED in the final build
+    set_property(TARGET ${TARGET} PROPERTY VERILATOR_TRACE_THREADED ON)
+  endif()
+
+  if (${VERILATE_PREFIX}_TRACE_FST_WRITER_THREAD)
+    set_property(TARGET ${TARGET} PROPERTY VERILATOR_TRACE_FST_WRITER_TRHEAD ON)
   endif()
 
   if (${VERILATE_PREFIX}_COVERAGE)
@@ -266,6 +292,10 @@ function(verilate TARGET)
     set_property(TARGET ${TARGET} PROPERTY VERILATOR_SYSTEMC ON)
   endif()
 
+  if (${VERILATE_PREFIX}_TRACE_STRUCTS)
+    set_property(TARGET ${TARGET} PROPERTY VERILATOR_TRACE_STRUCTS ON)
+  endif()
+
     # Add the compile flags only on Verilated sources
   target_include_directories(${TARGET} PUBLIC ${VDIR})
   target_sources(${TARGET} PRIVATE ${GENERATED_SOURCES} "${VCMAKE_COPY}"
@@ -288,6 +318,11 @@ function(verilate TARGET)
       set_property(SOURCE "${VFAST}" APPEND_STRING PROPERTY COMPILE_FLAGS " ${OPT_FAST}")
     endforeach()
   endforeach()
+  foreach(VGLOBAL ${${VERILATE_PREFIX}_GLOBAL})
+    foreach(OPT_GLOBAL ${VERILATE_OPT_GLOBAL} ${${VERILATE_PREFIX}_USER_CFLAGS})
+      set_property(SOURCE "${VGLOBAL}" APPEND_STRING PROPERTY COMPILE_FLAGS " ${OPT_GLOBAL}")
+    endforeach()
+  endforeach()
 
   target_include_directories(${TARGET} PUBLIC "${VERILATOR_ROOT}/include"
                                                "${VERILATOR_ROOT}/include/vltstd")
@@ -295,6 +330,8 @@ function(verilate TARGET)
     VM_COVERAGE=$<BOOL:$<TARGET_PROPERTY:VERILATOR_COVERAGE>>
     VM_SC=$<BOOL:$<TARGET_PROPERTY:VERILATOR_SYSTEMC>>
     $<$<BOOL:$<TARGET_PROPERTY:VERILATOR_THREADED>>:VL_THREADED>
+    $<$<BOOL:$<TARGET_PROPERTY:VERILATOR_TRACE_THREADED>>:VL_TRACE_THREADED>
+    $<$<BOOL:$<TARGET_PROPERTY:VERILATOR_TRACE_FST_WRITER_TRHEAD>>:VL_TRACE_FST_WRITER_THREAD>
     VM_TRACE=$<BOOL:$<TARGET_PROPERTY:VERILATOR_TRACE>>
     VM_TRACE_VCD=$<BOOL:$<TARGET_PROPERTY:VERILATOR_TRACE_VCD>>
     VM_TRACE_FST=$<BOOL:$<TARGET_PROPERTY:VERILATOR_TRACE_FST>>
@@ -302,15 +339,15 @@ function(verilate TARGET)
 
   target_link_libraries(${TARGET} PUBLIC
     ${${VERILATE_PREFIX}_USER_LDLIBS}
-    "$<$<BOOL:$<TARGET_PROPERTY:VERILATOR_THREADED>>:${VERILATOR_MT_CFLAGS}>"
   )
 
-  # SystemC requires the C++ version to match the library version, avoid setting anything here
-  set(GEN_THREADED $<BOOL:$<TARGET_PROPERTY:VERILATOR_THREADED>>)
-  set(GEN_SYSTEMC $<BOOL:$<TARGET_PROPERTY:VERILATOR_SYSTEMC>>)
-  target_compile_features(${TARGET} PRIVATE
-    $<$<AND:${GEN_THREADED},$<NOT:${GEN_SYSTEMC}>>:cxx_std_11>
-  )
+  if (${VERILATE_PREFIX}_THREADS OR ${VERILATE_PREFIX}_TRACE_THREADS)
+    target_link_libraries(${TARGET} PUBLIC
+      ${VERILATOR_MT_CFLAGS}
+    )
+  endif()
+
+  target_compile_features(${TARGET} PRIVATE cxx_std_11)
 endfunction()
 
 function(_verilator_find_systemc)

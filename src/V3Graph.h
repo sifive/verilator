@@ -6,7 +6,7 @@
 //
 //*************************************************************************
 //
-// Copyright 2003-2020 by Wilson Snyder. This program is free software; you
+// Copyright 2003-2022 by Wilson Snyder. This program is free software; you
 // can redistribute it and/or modify it under the terms of either the GNU
 // Lesser General Public License Version 3 or the Perl Artistic License
 // Version 2.0.
@@ -14,8 +14,8 @@
 //
 //*************************************************************************
 
-#ifndef _V3GRAPH_H_
-#define _V3GRAPH_H_ 1
+#ifndef VERILATOR_V3GRAPH_H_
+#define VERILATOR_V3GRAPH_H_
 
 #include "config_build.h"
 #include "verilatedos.h"
@@ -37,7 +37,7 @@ class OrderLogicVertex;
 // Most graph algorithms accept an arbitrary function that returns
 // True for those edges we should honor.
 
-typedef bool (*V3EdgeFuncP)(const V3GraphEdge* edgep);
+using V3EdgeFuncP = bool (*)(const V3GraphEdge* edgep);
 
 //=============================================================================
 // When the Graph represents a directional acyclical graph (DAG), following
@@ -45,21 +45,25 @@ typedef bool (*V3EdgeFuncP)(const V3GraphEdge* edgep);
 // it's useful to have algorithms that can walk in either direction, hence
 // some methods take GraphWay to programmatically select the direction.
 
-class GraphWay {
+class GraphWay final {
 public:
-    enum en { FORWARD=0,
-              REVERSE=1,
-              NUM_WAYS=2  // NUM_WAYS is not an actual way, it's typically
-              //          // an array dimension or loop bound.
+    enum en : uint8_t {
+        FORWARD = 0,
+        REVERSE = 1,
+        NUM_WAYS = 2  // NUM_WAYS is not an actual way, it's typically
+        //          // an array dimension or loop bound.
     };
     enum en m_e;
-    inline GraphWay() : m_e(FORWARD) {}
+    inline GraphWay()
+        : m_e{FORWARD} {}
     // cppcheck-suppress noExplicitConstructor
-    inline GraphWay(en _e) : m_e(_e) {}
-    explicit inline GraphWay(int _e) : m_e(static_cast<en>(_e)) {}
+    inline GraphWay(en _e)
+        : m_e{_e} {}
+    explicit inline GraphWay(int _e)
+        : m_e(static_cast<en>(_e)) {}  // Need () or GCC 4.8 false warning
     operator en() const { return m_e; }
     const char* ascii() const {
-        static const char* const names[] = { "FORWARD", "REVERSE" };
+        static const char* const names[] = {"FORWARD", "REVERSE"};
         return names[m_e];
     }
     // METHODS unique to this class
@@ -73,24 +77,23 @@ inline bool operator==(GraphWay::en lhs, const GraphWay& rhs) { return lhs == rh
 
 //============================================================================
 
-class V3Graph {
+class V3Graph VL_NOT_FINAL {
 private:
     // MEMBERS
     V3List<V3GraphVertex*> m_vertices;  // All vertices
     static int s_debug;
+
 protected:
-    friend class V3GraphVertex;    friend class V3GraphEdge;
+    friend class V3GraphVertex;
+    friend class V3GraphEdge;
     friend class GraphAcyc;
     // METHODS
-    void acyclicDFS();
-    void acyclicDFSIterate(V3GraphVertex *vertexp, int depth, uint32_t currentRank);
-    void acyclicCut();
-    void acyclicLoop(V3GraphVertex* vertexp, int depth);
     double orderDFSIterate(V3GraphVertex* vertexp);
     void dumpEdge(std::ostream& os, V3GraphVertex* vertexp, V3GraphEdge* edgep);
     void verticesUnlink() { m_vertices.reset(); }
     // ACCESSORS
     static int debug();
+
 public:
     V3Graph();
     virtual ~V3Graph();
@@ -138,12 +141,6 @@ public:
     /// Make acyclical (into a tree) by breaking a minimal subset of cutable edges.
     void acyclic(V3EdgeFuncP edgeFuncp);
 
-    /// Delete any nodes with only outputs
-    void deleteCutableOnlyEdges();
-
-    /// Any cutable edges become non-cutable
-    void makeEdgesNonCutable(V3EdgeFuncP edgeFuncp);
-
     /// Remove any redundant edges, weights become MAX of any other weight
     void removeRedundantEdges(V3EdgeFuncP edgeFuncp);
 
@@ -163,10 +160,10 @@ public:
     void subtreeLoops(V3EdgeFuncP edgeFuncp, V3GraphVertex* vertexp, V3Graph* loopGraphp);
 
     /// Debugging
-    void dump(std::ostream& os=std::cout);
+    void dump(std::ostream& os = std::cout);
     void dumpDotFile(const string& filename, bool colorAsSubgraph) const;
-    void dumpDotFilePrefixed(const string& nameComment, bool colorAsSubgraph=false) const;
-    void dumpDotFilePrefixedAlways(const string& nameComment, bool colorAsSubgraph=false) const;
+    void dumpDotFilePrefixed(const string& nameComment, bool colorAsSubgraph = false) const;
+    void dumpDotFilePrefixedAlways(const string& nameComment, bool colorAsSubgraph = false) const;
     void userClearVertices();
     void userClearEdges();
     static void selfTest();
@@ -178,20 +175,22 @@ public:
 
 //============================================================================
 
-class V3GraphVertex {
+class V3GraphVertex VL_NOT_FINAL {
     // Vertices may be a 'gate'/wire statement OR a variable
 protected:
-    friend class V3Graph;    friend class V3GraphEdge;
-    friend class GraphAcyc;  friend class GraphAlgRank;
+    friend class V3Graph;
+    friend class V3GraphEdge;
+    friend class GraphAcyc;
+    friend class GraphAlgRank;
     V3ListEnt<V3GraphVertex*> m_vertices;  // All vertices, linked list
-    V3List<V3GraphEdge*> m_outs;        // Outbound edges,linked list
-    V3List<V3GraphEdge*> m_ins;         // Inbound edges, linked list
-    double              m_fanout;       // Order fanout
-    uint32_t            m_color;        // Color of the node
-    uint32_t            m_rank;         // Rank of edge
+    V3List<V3GraphEdge*> m_outs;  // Outbound edges,linked list
+    V3List<V3GraphEdge*> m_ins;  // Inbound edges, linked list
+    double m_fanout;  // Order fanout
+    uint32_t m_color;  // Color of the node
+    uint32_t m_rank;  // Rank of edge
     union {
-        void*           m_userp;        // Marker for some algorithms
-        uint32_t        m_user;         // Marker for some algorithms
+        void* m_userp;  // Marker for some algorithms
+        uint32_t m_user;  // Marker for some algorithms
     };
     // METHODS
     void verticesPushBack(V3Graph* graphp);
@@ -202,14 +201,16 @@ protected:
 protected:
     // CONSTRUCTORS
     V3GraphVertex(V3Graph* graphp, const V3GraphVertex& old);
+
 public:
     explicit V3GraphVertex(V3Graph* graphp);
     //! Clone copy constructor. Doesn't copy edges or user/userp.
     virtual V3GraphVertex* clone(V3Graph* graphp) const {
-        return new V3GraphVertex(graphp, *this); }
-    virtual ~V3GraphVertex() {}
-    void        unlinkEdges(V3Graph* graphp);
-    void        unlinkDelete(V3Graph* graphp);
+        return new V3GraphVertex(graphp, *this);
+    }
+    virtual ~V3GraphVertex() = default;
+    void unlinkEdges(V3Graph* graphp);
+    void unlinkDelete(V3Graph* graphp);
 
     // ACCESSORS
     virtual string name() const { return ""; }
@@ -217,8 +218,9 @@ public:
     virtual string dotShape() const { return ""; }
     virtual string dotStyle() const { return ""; }
     virtual string dotName() const { return ""; }
+    virtual string dotRank() const { return ""; }
     virtual uint32_t rankAdder() const { return 1; }
-    virtual FileLine* fileline() const { return NULL; }  // NULL for unknown
+    virtual FileLine* fileline() const { return nullptr; }  // nullptr for unknown
     virtual int sortCmp(const V3GraphVertex* rhsp) const {
         // LHS goes first if of lower rank, or lower fanout
         if (m_rank < rhsp->m_rank) return -1;
@@ -227,27 +229,26 @@ public:
         if (m_fanout > rhsp->m_fanout) return 1;
         return 0;
     }
-    uint32_t    color() const { return m_color; }
-    void        color(uint32_t color) { m_color = color; }
-    uint32_t    rank() const { return m_rank; }
-    void        rank(uint32_t rank) { m_rank = rank; }
-    double      fanout() const { return m_fanout; }
-    void        user(uint32_t user) { m_user = user; }
-    uint32_t    user() const { return m_user; }
-    void        userp(void* userp) { m_userp = userp; }
-    void*       userp() const { return m_userp; }
+    uint32_t color() const { return m_color; }
+    void color(uint32_t color) { m_color = color; }
+    uint32_t rank() const { return m_rank; }
+    void rank(uint32_t rank) { m_rank = rank; }
+    double fanout() const { return m_fanout; }
+    void user(uint32_t user) { m_user = user; }
+    uint32_t user() const { return m_user; }
+    void userp(void* userp) { m_userp = userp; }
+    void* userp() const { return m_userp; }
     // ITERATORS
     V3GraphVertex* verticesNextp() const { return m_vertices.nextp(); }
     V3GraphEdge* inBeginp() const { return m_ins.begin(); }
-    bool         inEmpty() const { return inBeginp()==NULL; }
-    bool         inSize1() const;
-    uint32_t     inHash() const;
+    bool inEmpty() const { return inBeginp() == nullptr; }
+    bool inSize1() const;
+    uint32_t inHash() const;
     V3GraphEdge* outBeginp() const { return m_outs.begin(); }
-    bool         outEmpty() const { return outBeginp()==NULL; }
-    bool         outSize1() const;
-    uint32_t     outHash() const;
-    V3GraphEdge* beginp(GraphWay way) const {
-        return way.forward() ? outBeginp() : inBeginp(); }
+    bool outEmpty() const { return outBeginp() == nullptr; }
+    bool outSize1() const;
+    uint32_t outHash() const;
+    V3GraphEdge* beginp(GraphWay way) const { return way.forward() ? outBeginp() : inBeginp(); }
     // METHODS
     /// Error reporting
     void v3errorEnd(std::ostringstream& str) const;
@@ -255,7 +256,7 @@ public:
     /// Edges are routed around this vertex to point from "from" directly to "to"
     void rerouteEdges(V3Graph* graphp);
     /// Find the edge connecting ap and bp, where bp is wayward from ap.
-    /// If edge is not found returns NULL. O(edges) performance.
+    /// If edge is not found returns nullptr. O(edges) performance.
     V3GraphEdge* findConnectingEdgep(GraphWay way, const V3GraphVertex* waywardp);
 };
 
@@ -263,28 +264,30 @@ std::ostream& operator<<(std::ostream& os, V3GraphVertex* vertexp);
 
 //============================================================================
 
-class V3GraphEdge {
+class V3GraphEdge VL_NOT_FINAL {
     // Wires/variables aren't edges.  Edges have only a single to/from vertex
 public:
     // ENUMS
-    enum Cutable { NOT_CUTABLE = false, CUTABLE = true };  // For passing to V3GraphEdge
+    enum Cutable : uint8_t { NOT_CUTABLE = false, CUTABLE = true };  // For passing to V3GraphEdge
 protected:
-    friend class V3Graph;       friend class V3GraphVertex;
-    friend class GraphAcyc;     friend class GraphAcycEdge;
-    V3ListEnt<V3GraphEdge*> m_outs;     // Next Outbound edge for same vertex (linked list)
-    V3ListEnt<V3GraphEdge*> m_ins;      // Next Inbound edge for same vertex (linked list)
+    friend class V3Graph;
+    friend class V3GraphVertex;
+    friend class GraphAcyc;
+    friend class GraphAcycEdge;
+    V3ListEnt<V3GraphEdge*> m_outs;  // Next Outbound edge for same vertex (linked list)
+    V3ListEnt<V3GraphEdge*> m_ins;  // Next Inbound edge for same vertex (linked list)
     //
-    V3GraphVertex*      m_fromp;        // Vertices pointing to this edge
-    V3GraphVertex*      m_top;          // Vertices this edge points to
-    int                 m_weight;       // Weight of the connection
-    bool                m_cutable;      // Interconnect may be broken in order sorting
+    V3GraphVertex* m_fromp;  // Vertices pointing to this edge
+    V3GraphVertex* m_top;  // Vertices this edge points to
+    int m_weight;  // Weight of the connection
+    bool m_cutable;  // Interconnect may be broken in order sorting
     union {
-        void*           m_userp;        // Marker for some algorithms
-        uint32_t        m_user;         // Marker for some algorithms
+        void* m_userp;  // Marker for some algorithms
+        uint64_t m_user;  // Marker for some algorithms
     };
     // METHODS
-    void init(V3Graph* graphp, V3GraphVertex* fromp, V3GraphVertex* top,
-              int weight, bool cutable=false);
+    void init(V3Graph* graphp, V3GraphVertex* fromp, V3GraphVertex* top, int weight,
+              bool cutable = false);
     void cut() { m_weight = 0; }  // 0 weight is same as disconnected
     void outPushBack();
     void inPushBack();
@@ -294,21 +297,23 @@ protected:
                 const V3GraphEdge& old) {
         init(graphp, fromp, top, old.m_weight, old.m_cutable);
     }
+
 public:
     //! Add DAG from one node to the specified node
-    V3GraphEdge(V3Graph* graphp, V3GraphVertex* fromp, V3GraphVertex* top,
-                int weight, bool cutable=false) {
+    V3GraphEdge(V3Graph* graphp, V3GraphVertex* fromp, V3GraphVertex* top, int weight,
+                bool cutable = false) {
         init(graphp, fromp, top, weight, cutable);
     }
     //! Clone copy constructor.  Doesn't copy existing vertices or user/userp.
     virtual V3GraphEdge* clone(V3Graph* graphp, V3GraphVertex* fromp, V3GraphVertex* top) const {
-        return new V3GraphEdge(graphp, fromp, top, *this); }
-    virtual ~V3GraphEdge() {}
+        return new V3GraphEdge(graphp, fromp, top, *this);
+    }
+    virtual ~V3GraphEdge() = default;
     // METHODS
-    virtual string name() const { return m_fromp->name()+"->"+m_top->name(); }
+    virtual string name() const { return m_fromp->name() + "->" + m_top->name(); }
     virtual string dotLabel() const { return ""; }
-    virtual string dotColor() const { return cutable()?"yellowGreen":"red"; }
-    virtual string dotStyle() const { return cutable()?"dashed":""; }
+    virtual string dotColor() const { return cutable() ? "yellowGreen" : "red"; }
+    virtual string dotStyle() const { return cutable() ? "dashed" : ""; }
     virtual int sortCmp(const V3GraphEdge* rhsp) const {
         if (!m_weight || !rhsp->m_weight) return 0;
         return top()->sortCmp(rhsp->top());
@@ -322,8 +327,8 @@ public:
     void cutable(bool cutable) { m_cutable = cutable; }
     void userp(void* user) { m_userp = user; }
     void* userp() const { return m_userp; }
-    void user(uint32_t user) { m_user = user; }
-    uint32_t user() const { return m_user; }
+    void user(uint64_t user) { m_user = user; }
+    uint64_t user() const { return m_user; }
     V3GraphVertex* fromp() const { return m_fromp; }
     V3GraphVertex* top() const { return m_top; }
     V3GraphVertex* closerp(GraphWay way) const { return way.forward() ? fromp() : top(); }
@@ -334,8 +339,7 @@ public:
     // ITERATORS
     V3GraphEdge* outNextp() const { return m_outs.nextp(); }
     V3GraphEdge* inNextp() const { return m_ins.nextp(); }
-    V3GraphEdge* nextp(GraphWay way) const {
-        return way.forward() ? outNextp() : inNextp(); }
+    V3GraphEdge* nextp(GraphWay way) const { return way.forward() ? outNextp() : inNextp(); }
 };
 
 //============================================================================

@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 if (!$::Driver) { use FindBin; exec("$FindBin::Bin/bootstrap.pl", @ARGV, $0); die; }
 # DESCRIPTION: Verilator: Verilog Test driver/expect definition
 #
@@ -17,7 +17,9 @@ execute(
     check_finished => 1,
     );
 
-file_grep_not("$Self->{obj_dir}/$Self->{VM_PREFIX}.cpp", qr/rstn_r/);
+for my $file (glob_all("$Self->{obj_dir}/$Self->{VM_PREFIX}___024root*.cpp")) {
+    file_grep_not($file, qr/rstn_r/);
+}
 
 ok(1);
 1;

@@ -15,7 +15,7 @@ unsigned int main_time = 0;
 
 double sc_time_stamp() { return main_time; }
 
-VM_PREFIX* topp = NULL;
+VM_PREFIX* topp = nullptr;
 bool gotit = false;
 
 void myfunction() { gotit = true; }
@@ -26,9 +26,10 @@ int main(int argc, char* argv[]) {
     Verilated::debug(0);
 
     topp->eval();
-    if (!gotit) { vl_fatal(__FILE__, __LINE__, "dut", "Never got call to myfunction"); }
+    if (!gotit) vl_fatal(__FILE__, __LINE__, "dut", "Never got call to myfunction");
 
     topp->final();
+    VL_DO_DANGLING(delete topp, topp);
 
     return 0;
 }

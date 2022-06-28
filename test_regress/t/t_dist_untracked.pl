@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 if (!$::Driver) { use FindBin; exec("$FindBin::Bin/bootstrap.pl", @ARGV, $0); die; }
 # DESCRIPTION: Verilator: Verilog Test driver/expect definition
 #
@@ -27,16 +27,16 @@ if (!-r "$root/.git") {
             next if $file =~ /nodist/;
             if (_has_tabs("$root/$file")) {
                 $warns{$file} = "File not in git or .gitignore (with tabs): $file";
-                $summary = "Files untracked in git or .gitignore (with tabs):"
+                $summary = "Files untracked in git or .gitignore (with tabs):";
             } else {
                 $warns{$file} = "File not in git or .gitignore: $file";
-                $summary ||= "Files untracked in git or .gitignore:"
+                $summary ||= "Files untracked in git or .gitignore:";
             }
         }
     }
     if (keys %warns) {
         # First warning lists everything as that's shown in the driver summary
-        error($summary." ",join(' ',sort keys %warns));
+        error($summary . " ", join(' ', sort keys %warns));
         foreach my $file (sort keys %warns) {
             error($warns{$file});
         }

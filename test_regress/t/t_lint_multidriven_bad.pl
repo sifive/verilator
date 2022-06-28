@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 if (!$::Driver) { use FindBin; exec("$FindBin::Bin/bootstrap.pl", @ARGV, $0); die; }
 # DESCRIPTION: Verilator: Verilog Test driver/expect definition
 #
@@ -14,6 +14,16 @@ lint(
     fails => 1,
     expect_filename => $Self->{golden_filename},
     );
+
+extract(
+    in => $Self->{top_filename},
+    out => "../docs/gen/ex_MULTIDRIVEN_faulty.rst",
+    lines => "31-36");
+
+extract(
+    in => $Self->{golden_filename},
+    out => "../docs/gen/ex_MULTIDRIVEN_msg.rst",
+    lines => "10,11,14");
 
 ok(1);
 1;

@@ -30,7 +30,6 @@
 #include <cstdio>
 #include <cstring>
 #include <iostream>
-using namespace std;
 
 #include "TestSimulator.h"
 #include "TestVpi.h"
@@ -60,15 +59,15 @@ unsigned int main_time = 0;
 // Use cout to avoid issues with %d/%lx etc
 #define CHECK_RESULT(got, exp) \
     if ((got) != (exp)) { \
-        cout << dec << "%Error: " << FILENM << ":" << __LINE__ << ": GOT = " << (got) \
-             << "   EXP = " << (exp) << endl; \
+        std::cout << std::dec << "%Error: " << FILENM << ":" << __LINE__ << ": GOT = " << (got) \
+                  << "   EXP = " << (exp) << std::endl; \
         return __LINE__; \
     }
 
 #define CHECK_RESULT_HEX(got, exp) \
     if ((got) != (exp)) { \
-        cout << dec << "%Error: " << FILENM << ":" << __LINE__ << hex << ": GOT = " << (got) \
-             << "   EXP = " << (exp) << endl; \
+        std::cout << std::dec << "%Error: " << FILENM << ":" << __LINE__ << std::hex \
+                  << ": GOT = " << (got) << "   EXP = " << (exp) << endl; \
         return __LINE__; \
     }
 
@@ -82,7 +81,9 @@ unsigned int main_time = 0;
 #define CHECK_RESULT_CSTR_STRIP(got, exp) CHECK_RESULT_CSTR(got + strspn(got, " "), exp)
 
 static int _mon_check_props(TestVpiHandle& handle, int size, int direction, int scalar, int type) {
-    s_vpi_value value = {vpiIntVal, .value = {.integer = 0}};
+    s_vpi_value value;
+    value.format = vpiIntVal;
+    value.value.integer = 0;
     // check size of object
     int vpisize = vpi_get(vpiSize, handle);
     CHECK_RESULT(vpisize, size);
@@ -122,7 +123,7 @@ static int _mon_check_props(TestVpiHandle& handle, int size, int direction, int 
         int vpidir = vpi_get(vpiDirection, handle);
         // Don't check port directions in verilator
         // see #681
-        if (!TestSimulator::is_verilator()) { CHECK_RESULT(vpidir, direction); }
+        if (!TestSimulator::is_verilator()) CHECK_RESULT(vpidir, direction);
     }
 
     // check type of object
@@ -162,24 +163,30 @@ int mon_check_props() {
            {"fourthreetwoone",
             {2, vpiNoDirection, 0, vpiMemory},
             {2, vpiNoDirection, 0, vpiMemoryWord}},
+           {"theint", {32, vpiNoDirection, 0, vpiReg}, {0, 0, 0, 0}},
            {"clk", {1, vpiInput, 1, vpiPort}, {0, 0, 0, 0}},
            {"testin", {16, vpiInput, 0, vpiPort}, {0, 0, 0, 0}},
            {"testout", {24, vpiOutput, 0, vpiPort}, {0, 0, 0, 0}},
            {"sub.subin", {1, vpiInput, 1, vpiPort}, {0, 0, 0, 0}},
            {"sub.subout", {1, vpiOutput, 1, vpiPort}, {0, 0, 0, 0}},
+           {"sub.subparam", {32, vpiNoDirection, 0, vpiParameter}, {0, 0, 0, 0}},
+           {"sub.the_intf.bytesig", {8, vpiNoDirection, 0, vpiReg}, {0, 0, 0, 0}},
+           {"sub.the_intf.param", {32, vpiNoDirection, 0, vpiParameter}, {0, 0, 0, 0}},
+           {"sub.the_intf.lparam", {32, vpiNoDirection, 0, vpiParameter}, {0, 0, 0, 0}},
+           {"twobytwo", {4, vpiNoDirection, 0, vpiReg}, {0, 0, 0, 0}},
            {NULL, {0, 0, 0, 0}, {0, 0, 0, 0}}};
     struct params* value = values;
     while (value->signal) {
         TestVpiHandle h = VPI_HANDLE(value->signal);
-        CHECK_RESULT_NZ(h);
         TEST_MSG("%s\n", value->signal);
+        CHECK_RESULT_NZ(h);
         if (int status = _mon_check_props(h, value->attributes.size, value->attributes.direction,
                                           value->attributes.scalar, value->attributes.type))
             return status;
         if (value->children.size) {
             int size = 0;
             TestVpiHandle iter_h = vpi_iterate(vpiMemoryWord, h);
-            while (TestVpiHandle word_h = vpi_scan(iter_h.nofree())) {
+            while (TestVpiHandle word_h = vpi_scan(iter_h)) {
                 // check size and range
                 if (int status
                     = _mon_check_props(word_h, value->children.size, value->children.direction,
@@ -187,6 +194,7 @@ int mon_check_props() {
                     return status;
                 size++;
             }
+            iter_h.freed();  // IEEE 37.2.2 vpi_scan at end does a vpi_release_handle
             CHECK_RESULT(size, value->attributes.size);
         }
         value++;
@@ -194,18 +202,20 @@ int mon_check_props() {
     return 0;
 }
 
-int mon_check() {
+extern "C" int mon_check() {
     // Callback from initial block in monitor
     if (int status = mon_check_props()) return status;
     return 0;  // Ok
 }
+
+void dpi_print(const char* somestring) { printf("SOMESTRING = %s\n", somestring); }
 
 //======================================================================
 
 #ifdef IS_VPI
 
 static int mon_check_vpi() {
-    vpiHandle href = vpi_handle(vpiSysTfCall, 0);
+    TestVpiHandle href = vpi_handle(vpiSysTfCall, 0);
     s_vpi_value vpi_value;
 
     vpi_value.format = vpiIntVal;
@@ -223,8 +233,7 @@ static s_vpi_systf_data vpi_systf_data[] = {{vpiSysFunc, vpiIntFunc, (PLI_BYTE8*
 void vpi_compat_bootstrap(void) {
     p_vpi_systf_data systf_data_p;
     systf_data_p = &(vpi_systf_data[0]);
-    while (systf_data_p->type != 0)
-        vpi_register_systf(systf_data_p++);
+    while (systf_data_p->type != 0) vpi_register_systf(systf_data_p++);
 }
 
 // icarus entry
@@ -233,7 +242,7 @@ void (*vlog_startup_routines[])() = {vpi_compat_bootstrap, 0};
 #else
 double sc_time_stamp() { return main_time; }
 int main(int argc, char** argv, char** env) {
-    double sim_time = 1100;
+    uint64_t sim_time = 1100;
     Verilated::commandArgs(argc, argv);
     Verilated::debug(0);
 
@@ -257,7 +266,7 @@ int main(int argc, char** argv, char** env) {
     topp->clk = 0;
     main_time += 10;
 
-    while (sc_time_stamp() < sim_time && !Verilated::gotFinish()) {
+    while (vl_time_stamp64() < sim_time && !Verilated::gotFinish()) {
         main_time += 1;
         topp->eval();
         VerilatedVpi::callValueCbs();
@@ -277,7 +286,7 @@ int main(int argc, char** argv, char** env) {
 #endif
 
     VL_DO_DANGLING(delete topp, topp);
-    exit(0L);
+    return 0;
 }
 
 #endif

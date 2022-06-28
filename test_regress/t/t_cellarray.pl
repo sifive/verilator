@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 if (!$::Driver) { use FindBin; exec("$FindBin::Bin/bootstrap.pl", @ARGV, $0); die; }
 # DESCRIPTION: Verilator: Verilog Test driver/expect definition
 #
@@ -20,7 +20,7 @@ execute(
 
 if ($Self->{vlt_all}) {
     file_grep($Self->{stats}, qr/Optimizations, Gate assign merged\s+(\d+)/i, 28);
-};
+}
 
 ok(1);
 1;

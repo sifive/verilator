@@ -6,7 +6,7 @@
 //
 //*************************************************************************
 //
-// Copyright 2003-2020 by Wilson Snyder. This program is free software; you
+// Copyright 2003-2022 by Wilson Snyder. This program is free software; you
 // can redistribute it and/or modify it under the terms of either the GNU
 // Lesser General Public License Version 3 or the Perl Artistic License
 // Version 2.0.
@@ -14,25 +14,24 @@
 //
 //*************************************************************************
 
-#ifndef _V3EMITV_H_
-#define _V3EMITV_H_ 1
+#ifndef VERILATOR_V3EMITV_H_
+#define VERILATOR_V3EMITV_H_
 
 #include "config_build.h"
 #include "verilatedos.h"
 
-#include "V3Error.h"
-#include "V3Ast.h"
+class AstNode;
+class AstSenTree;
 
 //============================================================================
 
-class V3EmitV {
+class V3EmitV final {
 public:
-    static void emitv();
-    static void verilogForTree(AstNode* nodep, std::ostream& os=std::cout);
-    static void verilogPrefixedTree(AstNode* nodep, std::ostream& os,
-                                    const string& prefix, int flWidth,
-                                    AstSenTree* domainp, bool user3mark);
+    static void verilogForTree(const AstNode* nodep, std::ostream& os = std::cout);
+    static void verilogPrefixedTree(const AstNode* nodep, std::ostream& os, const string& prefix,
+                                    int flWidth, AstSenTree* domainp, bool user3mark);
     static void emitvFiles();
+    static void debugEmitV(const string& filename);
 };
 
 #endif  // Guard

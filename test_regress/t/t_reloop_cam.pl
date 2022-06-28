@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 if (!$::Driver) { use FindBin; exec("$FindBin::Bin/bootstrap.pl", @ARGV, $0); die; }
 # DESCRIPTION: Verilator: Verilog Test driver/expect definition
 #
@@ -12,6 +12,7 @@ scenarios(simulator => 1);
 
 compile(
     verilator_flags2 => ["-unroll-count 1024",
+                         "--expand-limit 1024",
                          $Self->wno_unopthreads_for_few_cores(),
                          "--stats"],
     );

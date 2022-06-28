@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 if (!$::Driver) { use FindBin; exec("$FindBin::Bin/bootstrap.pl", @ARGV, $0); die; }
 # DESCRIPTION: Verilator: Verilog Test driver/expect definition
 #
@@ -11,9 +11,9 @@ if (!$::Driver) { use FindBin; exec("$FindBin::Bin/bootstrap.pl", @ARGV, $0); di
 scenarios(vlt => 1);
 
 top_filename("$Self->{obj_dir}/$Self->{name}.v");
-$Self->{golden_filename} = "$Self->{obj_dir}/$Self->{name}.out";
+golden_filename("$Self->{obj_dir}/$Self->{name}.out");
 
-# Rather then having to maintain a new .v and .out, simply add returns
+# Rather then having to maintain a new .v and .out, add returns
 # to all lines of the existing t_preproc test.
 
 {

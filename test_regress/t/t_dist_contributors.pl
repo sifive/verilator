@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 if (!$::Driver) { use FindBin; exec("$FindBin::Bin/bootstrap.pl", @ARGV, $0); die; }
 # DESCRIPTION: Verilator: Verilog Test driver/expect definition
 #
@@ -16,10 +16,12 @@ scenarios(dist => 1);
 
 my $root = "..";
 my $Debug;
-my %Contributors;
+my %Contributors = ('github action' => 1);
 my %Authors;
 
-if (!-r "$root/.git") {
+if ($ENV{VERILATOR_TEST_NO_CONTRIBUTORS}) {
+    skip("Skipping due to VERILATOR_TEST_NO_CONTRIBUTORS");
+} elsif (!-r "$root/.git") {
     skip("Not in a git repository");
 } else {
     check();
@@ -35,10 +37,10 @@ sub check {
     for my $author (sort keys %Authors) {
         print "Check: $author\n" if $Self->{verbose};
         if (!$Contributors{$author}) {
-            error("Certify your contribution by appending '$author' to docs/CONTRIBUTORS.\n"
-                  ."   If '$author' is not your real name, please fix 'name=' in ~/.gitconfig\n"
-                  ."   Also check your https://github.com account's Settings->Profile->Name\n"
-                  ."   matches your ~/.gitconfig 'name='.\n");
+            error("Certify your contribution by sorted-inserting '$author' into docs/CONTRIBUTORS.\n"
+                  . "   If '$author' is not your real name, please fix 'name=' in ~/.gitconfig\n"
+                  . "   Also check your https://github.com account's Settings->Profile->Name\n"
+                  . "   matches your ~/.gitconfig 'name='.\n");
         }
     }
 }

@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/bin/bash
 # DESCRIPTION: Wrap a Verilator call and copy vlt includes
 #              (inside docker container)
 #
@@ -9,6 +9,10 @@
 # SPDX-License-Identifier: LGPL-3.0-only OR Artistic-2.0
 
 perl /usr/local/bin/verilator "$@"
+status=$?
+if [ $status -ne 0 ]; then
+    exit $status
+fi
 
 # Check if user set an obj_dir
 obj_dir=$(echo " $@" | grep -oP '\s--Mdir\s*\K\S+')
@@ -23,5 +27,5 @@ if [ -e ${obj_dir} ]; then
     cp -r /usr/local/share/verilator/bin ${obj_dir}/vlt
     cp -r /usr/local/share/verilator/include ${obj_dir}/vlt
     # Point Makefile to that folder
-    perl -i -pe 's/VERILATOR_ROOT = \/usr\/local\/share\/verilator/VERILATOR_ROOT = vlt/g' ${obj_dir}/*.mk
+    sed -i 's/VERILATOR_ROOT = \/usr\/local\/share\/verilator/VERILATOR_ROOT = vlt/g' ${obj_dir}/*.mk
 fi

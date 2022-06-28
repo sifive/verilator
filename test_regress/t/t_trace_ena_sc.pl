@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 if (!$::Driver) { use FindBin; exec("$FindBin::Bin/bootstrap.pl", @ARGV, $0); die; }
 # DESCRIPTION: Verilator: Verilog Test driver/expect definition
 #
@@ -26,7 +26,7 @@ else {
 
     if ($Self->{vlt_all}) {
         # Note more checks in _cc.pl
-        file_grep    ("$Self->{obj_dir}/simx.vcd", qr/\$enddefinitions/x);
+        file_grep("$Self->{obj_dir}/simx.vcd", qr/\$enddefinitions/x);
 
         vcd_identical("$Self->{obj_dir}/simx.vcd", $Self->{golden_filename});
     }

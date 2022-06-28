@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 if (!$::Driver) { use FindBin; exec("$FindBin::Bin/bootstrap.pl", @ARGV, $0); die; }
 # DESCRIPTION: Verilator: Verilog Test driver/expect definition
 #
@@ -19,7 +19,7 @@ if (!$ENV{VERILATOR_TEST_RANDOM_FAILURE}) {
     # Randomly fail to test driver.pl
     my ($ign, $t) = Time::HiRes::gettimeofday();
     if ($t % 2) {
-        error("random failure ".$t);
+        error("random failure " . $t);
     }
     else {
         ok(1);

@@ -6,7 +6,7 @@
 
 #include "Vt_tri_inout.h"
 
-Vt_tri_inout* tb = NULL;
+VM_PREFIX* tb = nullptr;
 
 double sc_time_stamp() { return 0; }
 
@@ -43,7 +43,7 @@ int main() {
         for (tb->A = 0; tb->A < 2; tb->A++) {
             for (tb->B = 0; tb->B < 2; tb->B++) {
                 tb->eval();
-                if (!check()) { pass = false; }
+                if (!check()) pass = false;
             }
         }
     }
@@ -54,5 +54,6 @@ int main() {
     } else {
         vl_fatal(__FILE__, __LINE__, "top", "Unexpected results from inout test\n");
     }
+    VL_DO_DANGLING(delete tb, tb);
     return 0;
 }

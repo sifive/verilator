@@ -6,6 +6,7 @@
 // Version 2.0.
 // SPDX-License-Identifier: LGPL-3.0-only OR Artistic-2.0
 
+// clang-format off
 #include "verilatedos.h"
 #include VM_PREFIX_INCLUDE
 #include "Vt_trace_two_b.h"
@@ -13,12 +14,10 @@
 #ifdef TEST_HDR_TRACE
 # include "verilated_vcd_sc.h"
 #endif
+// clang-format on
 
 // Compile in place
-#include "Vt_trace_two_b.cpp"
-#include "Vt_trace_two_b__Syms.cpp"
-#include "Vt_trace_two_b__Trace.cpp"
-#include "Vt_trace_two_b__Trace__Slow.cpp"
+#include "Vt_trace_two_b__ALL.cpp"
 
 // General headers
 #include "verilated.h"
@@ -41,25 +40,18 @@ int sc_main(int argc, char** argv) {
 
 #ifdef TEST_HDR_TRACE
     VerilatedVcdSc* tfp = new VerilatedVcdSc;
+    sc_core::sc_start(sc_core::SC_ZERO_TIME);
     ap->trace(tfp, 99);
     bp->trace(tfp, 99);
     tfp->open(VL_STRINGIFY(TEST_OBJ_DIR) "/simx.vcd");
 #endif
     {
         clk = false;
-#if (SYSTEMC_VERSION>=20070314)
         sc_start(10, SC_NS);
-#else
-        sc_start(10);
-#endif
     }
     while (sc_time_stamp() < sim_time && !Verilated::gotFinish()) {
         clk = !clk;
-#if (SYSTEMC_VERSION>=20070314)
         sc_start(5, SC_NS);
-#else
-        sc_start(5);
-#endif
     }
     if (!Verilated::gotFinish()) {
         vl_fatal(__FILE__, __LINE__, "main", "%Error: Timeout; never got a $finish");
@@ -72,5 +64,5 @@ int sc_main(int argc, char** argv) {
 
     VL_DO_DANGLING(delete ap, ap);
     VL_DO_DANGLING(delete bp, bp);
-    exit(0L);
+    return 0;
 }

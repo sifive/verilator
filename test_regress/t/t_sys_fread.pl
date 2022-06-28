@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 if (!$::Driver) { use FindBin; exec("$FindBin::Bin/bootstrap.pl", @ARGV, $0); die; }
 # DESCRIPTION: Verilator: Verilog Test driver/expect definition
 #
@@ -18,8 +18,8 @@ sub gen {
     my $filename = shift;
 
     my $fh = IO::File->new(">$filename");
-    for (my $copy=0; $copy<32; ++$copy) {
-        for (my $i=0; $i<=255; ++$i) {
+    for (my $copy = 0; $copy < 32; ++$copy) {
+        for (my $i = 0; $i <= 255; ++$i) {
             $fh->print(chr($i));
         }
     }

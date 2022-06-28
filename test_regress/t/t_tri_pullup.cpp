@@ -6,7 +6,7 @@
 
 #include "Vt_tri_pullup.h"
 
-Vt_tri_pullup* tb = NULL;
+VM_PREFIX* tb = nullptr;
 
 double sc_time_stamp() { return 0; }
 
@@ -53,7 +53,7 @@ int main() {
     for (tb->OE = 0; tb->OE < 2; tb->OE++) {
         for (tb->A = 0; tb->A < 2; tb->A++) {
             tb->eval();
-            if (!check()) { pass = false; }
+            if (!check()) pass = false;
         }
     }
 
@@ -63,5 +63,6 @@ int main() {
     } else {
         vl_fatal(__FILE__, __LINE__, "top", "Unexpected results from pullup test\n");
     }
+    VL_DO_DANGLING(delete tb, tb);
     return 0;
 }

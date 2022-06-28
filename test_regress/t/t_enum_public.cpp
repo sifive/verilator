@@ -12,6 +12,8 @@
 #include "Vt_enum_public_p3.h"
 #include "Vt_enum_public_p62.h"
 
+double sc_time_stamp() { return 0; }
+
 int main(int argc, char* argv[]) {
     Vt_enum_public* topp = new Vt_enum_public;
 
@@ -21,7 +23,10 @@ int main(int argc, char* argv[]) {
     if (Vt_enum_public_p3::ZERO == Vt_enum_public_p3::ONE) {}
     if (Vt_enum_public_p62::ZERO == Vt_enum_public_p62::ALLONE) {}
 
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < 10; i++) {  //
         topp->eval();
     }
+
+    topp->final();
+    VL_DO_DANGLING(delete topp, topp);
 }

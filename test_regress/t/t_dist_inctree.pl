@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 if (!$::Driver) { use FindBin; exec("$FindBin::Bin/bootstrap.pl", @ARGV, $0); die; }
 # DESCRIPTION: Verilator: Verilog Test driver/expect definition
 #
@@ -34,7 +34,7 @@ sub inctree {
     my $grep = `$cmd`;
     foreach my $line (split /\n/, $grep) {
         if ($line =~ /^(\S+):(\d+):#\s*include\s*(\S+)/) {
-            my $filename = $1; my $line = $2+0; my $inc = $3;
+            my $filename = $1; my $line = $2 + 0; my $inc = $3;
             (my $base = $filename) =~ s!.*/(.*?)!$1!;
             $inc =~ s/[<>"]//g;
             $Files{$base}{filename} = $filename;

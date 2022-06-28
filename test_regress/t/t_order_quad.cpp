@@ -15,12 +15,12 @@ unsigned int main_time = 0;
 
 double sc_time_stamp() { return main_time; }
 
-VM_PREFIX* topp = NULL;
+VM_PREFIX* topp = nullptr;
 bool fail = false;
 
 void check(QData got, QData exp) {
     if (got != exp) {
-        VL_PRINTF("%%Error: got=0x%" VL_PRI64 "x exp=0x%" VL_PRI64 "x\n", got, exp);
+        VL_PRINTF("%%Error: got=0x%" PRIx64 " exp=0x%" PRIx64 "\n", got, exp);
         fail = true;
     }
 }
@@ -32,18 +32,19 @@ int main(int argc, char* argv[]) {
 
     topp->a0 = 0;
     topp->eval();
-    check(topp->y, VL_ULL(0x0));
+    check(topp->y, 0x0ULL);
 
     topp->a0 = 15;
     topp->eval();
-    check(topp->y, VL_ULL(0x3c00000000));
+    check(topp->y, 0x3c00000000ULL);
 
-    topp->final();
     if (!fail) {
         VL_PRINTF("*-* All Finished *-*\n");
         topp->final();
     } else {
         vl_fatal(__FILE__, __LINE__, "top", "Unexpected results\n");
     }
+
+    VL_DO_DANGLING(delete topp, topp);
     return 0;
 }

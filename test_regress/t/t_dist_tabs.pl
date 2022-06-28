@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 if (!$::Driver) { use FindBin; exec("$FindBin::Bin/bootstrap.pl", @ARGV, $0); die; }
 # DESCRIPTION: Verilator: Verilog Test driver/expect definition
 #
@@ -12,7 +12,9 @@ scenarios(dist => 1);
 
 my $root = "..";
 
-my $Tabs_Exempt_Re = qr!(\.out$)|(/gtkwave)|(Makefile)|(\.mk$)!;
+my $Tabs_Exempt_Re = qr!(\.out$)|(/gtkwave)|(Makefile)|(\.mk$)|(nodist/fastcov.py)!;
+#my $Wide_Exempt_Re = qr!(\.l$)|(\.y$)!;
+my $Wide_Exempt_Re = qr!.*!;  # clang-tidy generally cleans up
 
 if (!-r "$root/.git") {
     skip("Not in a git repository");
@@ -41,10 +43,10 @@ if (!-r "$root/.git") {
                 $btab = 0;
                 print " File $file\n" if $Self->{verbose};
             }
-            elsif ($line  =~ m!^@@ -?[0-9]+,?[0-9]* \+?([0-9]+)!) {
+            elsif ($line =~ m!^@@ -?[0-9]+,?[0-9]* \+?([0-9]+)!) {
                 $lineno = $1 - 1;
             }
-            elsif ($line  =~ m!^ !) {
+            elsif ($line =~ m!^ !) {
                 ++$lineno;
                 if ($line =~ m!^[- ].*\t!) {
                     print "  Had tabs\n" if $Self->{verbose} && !$atab;
@@ -68,8 +70,9 @@ if (!-r "$root/.git") {
                 }
                 my $len = length($1);
                 if ($len >= 100
-                    && $file !~ /\.out$/) {
-                    print"  Wide $line\n" if $Self->{verbose};
+                    && $file !~ $Tabs_Exempt_Re
+                    && $file !~ $Wide_Exempt_Re) {
+                    print "  Wide $line\n" if $Self->{verbose};
                     $summary = "File modification adds a new >100 column line:" if !$summary;
                     $warns{$file} = "File modification adds a new >100 column line: $file:$lineno";
                 }
@@ -78,7 +81,7 @@ if (!-r "$root/.git") {
     }
     if (keys %warns) {
         # First warning lists everything as that's shown in the driver summary
-        error($summary." ",join(' ',sort keys %warns));
+        error($summary . " ", join(' ', sort keys %warns));
         foreach my $file (sort keys %warns) {
             error($warns{$file});
         }

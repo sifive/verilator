@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 if (!$::Driver) { use FindBin; exec("$FindBin::Bin/bootstrap.pl", @ARGV, $0); die; }
 # DESCRIPTION: Verilator: Verilog Test driver/expect definition
 #
@@ -51,7 +51,7 @@ sub preproc_check {
                 my $check = shift @Line_Checks;
                 if (!$check) { error("$filename2:$.: Extra Line_Preproc_Check\n"); }
                 if ($linecmt != $check) { error("$filename2:$.: __LINE__ inserted $linecmt, exp=$check\n"); }
-                if ($lineno != $check)  { error("$filename2:$.: __LINE__ on `line $lineno, exp=$check\n"); }
+                if ($lineno != $check) { error("$filename2:$.: __LINE__ on `line $lineno, exp=$check\n"); }
             }
         }
         $fh->close;

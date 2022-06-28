@@ -26,6 +26,8 @@ using std::hex;
 using std::setfill;
 using std::setw;
 
+double sc_time_stamp() { return 0; }
+
 // Convenience function to check we didn't finish unexpectedly
 static void checkFinish(const char* msg) {
     if (Verilated::gotFinish()) {
@@ -54,7 +56,7 @@ static void logRegHex(int clk, const char* desc, int bitWidth, int val, const ch
 
 // Convenience function to check we got an expected result. Silent on success.
 static void checkResult(bool p, const char* msg_fail) {
-    if (!p) { vl_fatal(__FILE__, __LINE__, "dut", msg_fail); }
+    if (!p) vl_fatal(__FILE__, __LINE__, "dut", msg_fail);
 }
 
 // Main function instantiates the model and steps through the test.
@@ -69,8 +71,8 @@ int main() {
     dut->eval();
 
 #ifdef TEST_VERBOSE
-    cout << "Initial DPI values" << endl;
-    cout << "==================" << endl;
+    cout << "Initial DPI values\n";
+    cout << "==================\n";
 #endif
 
     int a = (int)a_read();
@@ -106,8 +108,8 @@ int main() {
 
     // Check we can read a scalar register.
 #ifdef TEST_VERBOSE
-    cout << "Test of scalar register reading" << endl;
-    cout << "===============================" << endl;
+    cout << "Test of scalar register reading\n";
+    cout << "===============================\n";
 #endif
 
     for (int i = 0; !Verilated::gotFinish() && (i < 4); i++) {
@@ -132,8 +134,8 @@ int main() {
 
     // Check we can read a vector register.
 #ifdef TEST_VERBOSE
-    cout << "Test of vector register reading" << endl;
-    cout << "===============================" << endl;
+    cout << "Test of vector register reading\n";
+    cout << "===============================\n";
 #endif
 
     for (int i = 0; !Verilated::gotFinish() && (i < 4); i++) {
@@ -156,8 +158,8 @@ int main() {
     // Test we can read an array element
 #ifdef TEST_VERBOSE
     cout << endl;
-    cout << "Test of array element reading" << endl;
-    cout << "=============================" << endl;
+    cout << "Test of array element reading\n";
+    cout << "=============================\n";
 #endif
 
     for (int i = 0; !Verilated::gotFinish() && (i < 4); i++) {
@@ -180,8 +182,8 @@ int main() {
     // Check we can read a scalar wire
 #ifdef TEST_VERBOSE
     cout << endl;
-    cout << "Test of scalar wire reading" << endl;
-    cout << "===========================" << endl;
+    cout << "Test of scalar wire reading\n";
+    cout << "===========================\n";
 #endif
 
     for (int i = 0; !Verilated::gotFinish() && (i < 4); i++) {
@@ -199,7 +201,7 @@ int main() {
         logReg(dut->clk, "read c", c, " (after clk)");
         // "c" is continuously assigned as the inverse of "a", but in
         // Verilator, that means that it will only change value when "a"
-        // changes on the posedge of a clock. Put simply, "c" always holds the
+        // changes on the posedge of a clock. That is "c" always holds the
         // inverse of the "after clock" value of "a".
         checkResult(c == (1 - a), "Test of scalar wire reading failed.");
     }
@@ -209,8 +211,8 @@ int main() {
     // Check we can read a vector wire
 #ifdef TEST_VERBOSE
     cout << endl;
-    cout << "Test of vector wire reading" << endl;
-    cout << "===========================" << endl;
+    cout << "Test of vector wire reading\n";
+    cout << "===========================\n";
 #endif
 
     for (int i = 0; !Verilated::gotFinish() && (i < 4); i++) {
@@ -229,7 +231,7 @@ int main() {
 
         // "d" is continuously assigned as the (8-bit) bitwise inverse of "b",
         // but in Verilator, that means that it will only change value when
-        // "b" changes on the posedge of a clock. Put simply, "d" always holds
+        // "b" changes on the posedge of a clock. That is "d" always holds
         // the inverse of the "after clock" value of "b".
         checkResult(d == ((~b) & 0xff), "Test of vector wire reading failed.");
     }
@@ -239,14 +241,14 @@ int main() {
     // Check we can write a scalar register
 #ifdef TEST_VERBOSE
     cout << endl;
-    cout << "Test of scalar register writing" << endl;
-    cout << "===============================" << endl;
+    cout << "Test of scalar register writing\n";
+    cout << "===============================\n";
 #endif
 
     for (int i = 0; !Verilated::gotFinish() && (i < 4); i++) {
         dut->clk = 1 - dut->clk;
         a = 1 - (int)a_read();
-        a_write(a);
+        a_write(reinterpret_cast<const svBitVecVal*>(&a));
         logReg(dut->clk, "write a", a, " (before clk)");
         a = a_read();
         logReg(dut->clk, "read  a", a, " (before clk)");
@@ -268,14 +270,14 @@ int main() {
     // Check we can write a vector register
 #ifdef TEST_VERBOSE
     cout << endl;
-    cout << "Test of vector register writing" << endl;
-    cout << "===============================" << endl;
+    cout << "Test of vector register writing\n";
+    cout << "===============================\n";
 #endif
 
     for (int i = 0; !Verilated::gotFinish() && (i < 4); i++) {
         dut->clk = 1 - dut->clk;
         b = (int)b_read() - 1;
-        b_write((const svBitVecVal*)&b);
+        b_write(reinterpret_cast<const svBitVecVal*>(&b));
         logRegHex(dut->clk, "write b", 8, b, " (before clk)");
         b = (int)b_read();
         logRegHex(dut->clk, "read  b", 8, b, " (before clk)");
@@ -297,14 +299,14 @@ int main() {
     // Test we can write an array element
 #ifdef TEST_VERBOSE
     cout << endl;
-    cout << "Test of array element writing" << endl;
-    cout << "=============================" << endl;
+    cout << "Test of array element writing\n";
+    cout << "=============================\n";
 #endif
 
     for (int i = 0; !Verilated::gotFinish() && (i < 4); i++) {
         dut->clk = 1 - dut->clk;
         mem32 = (int)mem32_read() - 1;
-        mem32_write((const svBitVecVal*)&mem32);
+        mem32_write(reinterpret_cast<const svBitVecVal*>(&mem32));
         logRegHex(dut->clk, "write mem32", 8, mem32, " (before clk)");
         mem32 = (int)mem32_read();
         logRegHex(dut->clk, "read  mem32", 8, mem32, " (before clk)");
@@ -326,8 +328,8 @@ int main() {
     // Check we can read a vector register slice
 #ifdef TEST_VERBOSE
     cout << endl;
-    cout << "Test of vector register slice reading" << endl;
-    cout << "=====================================" << endl;
+    cout << "Test of vector register slice reading\n";
+    cout << "=====================================\n";
 #endif
 
     for (int i = 0; !Verilated::gotFinish() && (i < 4); i++) {
@@ -353,8 +355,8 @@ int main() {
     // Test we can read an array element slice
 #ifdef TEST_VERBOSE
     cout << endl;
-    cout << "Test of array element slice reading" << endl;
-    cout << "===================================" << endl;
+    cout << "Test of array element slice reading\n";
+    cout << "===================================\n";
 #endif
 
     for (int i = 0; !Verilated::gotFinish() && (i < 4); i++) {
@@ -382,8 +384,8 @@ int main() {
     // Check we can read a vector wire slice
 #ifdef TEST_VERBOSE
     cout << endl;
-    cout << "Test of vector wire slice reading" << endl;
-    cout << "=================================" << endl;
+    cout << "Test of vector wire slice reading\n";
+    cout << "=================================\n";
 #endif
 
     for (int i = 0; !Verilated::gotFinish() && (i < 4); i++) {
@@ -413,8 +415,8 @@ int main() {
     // Check we can write a vector register slice
 #ifdef TEST_VERBOSE
     cout << endl;
-    cout << "Test of vector register slice writing" << endl;
-    cout << "=====================================" << endl;
+    cout << "Test of vector register slice writing\n";
+    cout << "=====================================\n";
 #endif
 
     for (int i = 0; !Verilated::gotFinish() && (i < 4); i++) {
@@ -426,7 +428,7 @@ int main() {
         logRegHex(dut->clk, "read  b [3:0]", 4, b_slice, " (before write)");
 
         b_slice--;
-        b_slice_write((const svBitVecVal*)&b_slice);
+        b_slice_write(reinterpret_cast<const svBitVecVal*>(&b_slice));
         logRegHex(dut->clk, "write b [3:0]", 4, b_slice, " (before clk)");
 
         int b_after = (int)b_read();
@@ -452,8 +454,8 @@ int main() {
     // Test we can write an array element slice
 #ifdef TEST_VERBOSE
     cout << endl;
-    cout << "Test of array element slice writing" << endl;
-    cout << "===================================" << endl;
+    cout << "Test of array element slice writing\n";
+    cout << "===================================\n";
 #endif
 
     for (int i = 0; !Verilated::gotFinish() && (i < 4); i++) {
@@ -465,7 +467,7 @@ int main() {
         logRegHex(dut->clk, "read  mem32 [7:6,2:0]", 5, mem32_slice, " (before write)");
 
         mem32_slice--;
-        mem32_slice_write((const svBitVecVal*)&mem32_slice);
+        mem32_slice_write(reinterpret_cast<const svBitVecVal*>(&mem32_slice));
         logRegHex(dut->clk, "write mem32 [7:6,2:0]", 5, mem32_slice, " (before clk)");
 
         int mem32_after = (int)mem32_read();
@@ -497,8 +499,8 @@ int main() {
     // Check we can read complex registers
 #ifdef TEST_VERBOSE
     cout << endl;
-    cout << "Test of complex register reading" << endl;
-    cout << "================================" << endl;
+    cout << "Test of complex register reading\n";
+    cout << "================================\n";
 #endif
 
     for (int i = 0; !Verilated::gotFinish() && (i < 4); i++) {
@@ -545,8 +547,8 @@ int main() {
 
         e = 0x05 | (i << 4);
         f = 0xa0 | i;
-        e_write((const svBitVecVal*)&e);
-        f_write((const svBitVecVal*)&f);
+        e_write(reinterpret_cast<const svBitVecVal*>(&e));
+        f_write(reinterpret_cast<const svBitVecVal*>(&f));
 
         e = (int)e_read();
         f = (int)f_read();
@@ -577,8 +579,8 @@ int main() {
     // Test we can write a complex register
 #ifdef TEST_VERBOSE
     cout << endl;
-    cout << "Test of complex register writing" << endl;
-    cout << "================================" << endl;
+    cout << "Test of complex register writing\n";
+    cout << "================================\n";
 #endif
 
     for (int i = 0; !Verilated::gotFinish() && (i < 4); i++) {
@@ -592,7 +594,7 @@ int main() {
         logRegHex(dut->clk, "read  e    ", 8, e, " (before write)");
 
         int l1 = 0x5a5a;
-        l1_write((const svBitVecVal*)&l1);
+        l1_write(reinterpret_cast<const svBitVecVal*>(&l1));
         logRegHex(dut->clk, "write l1   ", 15, l1, " (before clk)");
 
         int b_after = (int)b_read();
@@ -641,7 +643,7 @@ int main() {
         logRegHex(dut->clk, "read  f ", 8, f, " (before write)");
 
         int l2 = 0xa5 + i;
-        l2_write((const svBitVecVal*)&l2);
+        l2_write(reinterpret_cast<const svBitVecVal*>(&l2));
         logRegHex(dut->clk, "write l2", 8, l2, " (before clk)");
 
         int e_after = (int)e_read();
@@ -673,7 +675,8 @@ int main() {
 
     // Tidy up
     dut->final();
-    cout << "*-* All Finished *-*" << endl;
+    VL_DO_DANGLING(delete dut, dut);
+    cout << "*-* All Finished *-*\n";
 }
 
 // Local Variables:

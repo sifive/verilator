@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 if (!$::Driver) { use FindBin; exec("$FindBin::Bin/bootstrap.pl", @ARGV, $0); die; }
 # DESCRIPTION: Verilator: Verilog Test driver/expect definition
 #
@@ -12,7 +12,7 @@ scenarios(simulator => 1);
 
 compile(
     v_flags2 => ["t/t_dpi_qw_c.cpp"],
-    verilator_flags2 => ["-Wall -Wno-DECLFILENAME -no-l2name"],
+    verilator_flags2 => ["-Wall -Wno-DECLFILENAME -Wno-UNOPTFLAT -no-l2name"],
     );
 
 execute(

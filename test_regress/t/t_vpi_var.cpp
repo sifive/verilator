@@ -30,7 +30,6 @@
 #include <cstdio>
 #include <cstring>
 #include <iostream>
-using namespace std;
 
 #include "TestSimulator.h"
 #include "TestVpi.h"
@@ -50,6 +49,12 @@ unsigned int callback_count_strs_max = 500;
 
 //======================================================================
 
+#ifdef TEST_VERBOSE
+bool verbose = true;
+#else
+bool verbose = false;
+#endif
+
 #define CHECK_RESULT_VH(got, exp) \
     if ((got) != (exp)) { \
         printf("%%Error: %s:%d: GOT = %p   EXP = %p\n", FILENM, __LINE__, (got), (exp)); \
@@ -62,18 +67,24 @@ unsigned int callback_count_strs_max = 500;
         return __LINE__; \
     }
 
+#define CHECK_RESULT_Z(got) \
+    if ((got)) { \
+        printf("%%Error: %s:%d: GOT = !NULL  EXP = NULL\n", FILENM, __LINE__); \
+        return __LINE__; \
+    }
+
 // Use cout to avoid issues with %d/%lx etc
 #define CHECK_RESULT(got, exp) \
     if ((got) != (exp)) { \
-        cout << dec << "%Error: " << FILENM << ":" << __LINE__ << ": GOT = " << (got) \
-             << "   EXP = " << (exp) << endl; \
+        std::cout << std::dec << "%Error: " << FILENM << ":" << __LINE__ << ": GOT = " << (got) \
+                  << "   EXP = " << (exp) << std::endl; \
         return __LINE__; \
     }
 
 #define CHECK_RESULT_HEX(got, exp) \
     if ((got) != (exp)) { \
-        cout << dec << "%Error: " << FILENM << ":" << __LINE__ << hex << ": GOT = " << (got) \
-             << "   EXP = " << (exp) << endl; \
+        std::cout << std::dec << "%Error: " << FILENM << ":" << __LINE__ << std::hex \
+                  << ": GOT = " << (got) << "   EXP = " << (exp) << std::endl; \
         return __LINE__; \
     }
 
@@ -107,8 +118,14 @@ int _mon_check_mcd() {
     status = vpi_mcd_printf(mcd, (PLI_BYTE8*)"hello %s", "vpi_mcd_printf");
     CHECK_RESULT(status, strlen("hello vpi_mcd_printf"));
 
+    status = vpi_mcd_printf(0, (PLI_BYTE8*)"empty");
+    CHECK_RESULT(status, 0);
+
     status = vpi_mcd_flush(mcd);
     CHECK_RESULT(status, 0);
+
+    status = vpi_mcd_flush(0);
+    CHECK_RESULT(status, 1);
 
     status = vpi_mcd_close(mcd);
     // Icarus says 'error' on ones we're not using, so check only used ones return 0.
@@ -133,17 +150,18 @@ int _mon_check_callbacks() {
     cb_data.value = NULL;
     cb_data.time = NULL;
 
-    vpiHandle vh = vpi_register_cb(&cb_data);
+    TestVpiHandle vh = vpi_register_cb(&cb_data);
     CHECK_RESULT_NZ(vh);
 
     PLI_INT32 status = vpi_remove_cb(vh);
+    vh.freed();
     CHECK_RESULT_NZ(status);
 
     return 0;
 }
 
 int _value_callback(p_cb_data cb_data) {
-
+    if (verbose) vpi_printf(const_cast<char*>("     _value_callback:\n"));
     if (TestSimulator::is_verilator()) {
         // this check only makes sense in Verilator
         CHECK_RESULT(cb_data->value->value.integer + 10, main_time);
@@ -173,50 +191,59 @@ int _value_callback_quad(p_cb_data cb_data) {
 }
 
 int _mon_check_value_callbacks() {
-    vpiHandle vh1 = VPI_HANDLE("count");
-    CHECK_RESULT_NZ(vh1);
-
     s_vpi_value v;
     v.format = vpiIntVal;
-    vpi_get_value(vh1, &v);
 
     t_cb_data cb_data;
     cb_data.reason = cbValueChange;
-    cb_data.cb_rtn = _value_callback;
-    cb_data.obj = vh1;
-    cb_data.value = &v;
     cb_data.time = NULL;
 
-    vpiHandle vh = vpi_register_cb(&cb_data);
-    CHECK_RESULT_NZ(vh);
+    {
+        TestVpiHandle vh1 = VPI_HANDLE("count");
+        CHECK_RESULT_NZ(vh1);
 
-    vh1 = VPI_HANDLE("half_count");
-    CHECK_RESULT_NZ(vh1);
+        vpi_get_value(vh1, &v);
+        cb_data.value = &v;
+        cb_data.obj = vh1;
+        cb_data.cb_rtn = _value_callback;
 
-    cb_data.obj = vh1;
-    cb_data.cb_rtn = _value_callback_half;
+        if (verbose) vpi_printf(const_cast<char*>("     vpi_register_cb(_value_callback):\n"));
+        TestVpiHandle callback_h = vpi_register_cb(&cb_data);
+        CHECK_RESULT_NZ(callback_h);
+    }
+    {
+        TestVpiHandle vh1 = VPI_HANDLE("half_count");
+        CHECK_RESULT_NZ(vh1);
 
-    vh = vpi_register_cb(&cb_data);
-    CHECK_RESULT_NZ(vh);
+        cb_data.obj = vh1;
+        cb_data.cb_rtn = _value_callback_half;
 
-    vh1 = VPI_HANDLE("quads");
-    CHECK_RESULT_NZ(vh1);
+        TestVpiHandle callback_h = vpi_register_cb(&cb_data);
+        CHECK_RESULT_NZ(callback_h);
+    }
+    {
+        TestVpiHandle vh1 = VPI_HANDLE("quads");
+        CHECK_RESULT_NZ(vh1);
 
-    v.format = vpiVectorVal;
-    cb_data.obj = vh1;
-    cb_data.cb_rtn = _value_callback_quad;
+        v.format = vpiVectorVal;
+        cb_data.obj = vh1;
+        cb_data.cb_rtn = _value_callback_quad;
 
-    vh = vpi_register_cb(&cb_data);
-    CHECK_RESULT_NZ(vh);
+        TestVpiHandle callback_h = vpi_register_cb(&cb_data);
+        CHECK_RESULT_NZ(callback_h);
+    }
+    {
+        TestVpiHandle vh1 = VPI_HANDLE("quads");
+        CHECK_RESULT_NZ(vh1);
+        TestVpiHandle vh2 = vpi_handle_by_index(vh1, 2);
+        CHECK_RESULT_NZ(vh2);
 
-    vh1 = vpi_handle_by_index(vh1, 2);
-    CHECK_RESULT_NZ(vh1);
+        cb_data.obj = vh2;
+        cb_data.cb_rtn = _value_callback_quad;
 
-    cb_data.obj = vh1;
-    cb_data.cb_rtn = _value_callback_quad;
-
-    vh = vpi_register_cb(&cb_data);
-    CHECK_RESULT_NZ(vh);
+        TestVpiHandle callback_h = vpi_register_cb(&cb_data);
+        CHECK_RESULT_NZ(callback_h);
+    }
     return 0;
 }
 
@@ -273,7 +300,7 @@ int _mon_check_var() {
         vpi_get_value(vh10, &tmpValue);
         CHECK_RESULT(tmpValue.value.integer, 4);
         p = vpi_get_str(vpiType, vh10);
-        CHECK_RESULT_CSTR(p, "*undefined*");
+        CHECK_RESULT_CSTR(p, "vpiConstant");
     }
     {
         TestVpiHandle vh10 = vpi_handle(vpiRightRange, vh4);
@@ -281,7 +308,7 @@ int _mon_check_var() {
         vpi_get_value(vh10, &tmpValue);
         CHECK_RESULT(tmpValue.value.integer, 3);
         p = vpi_get_str(vpiType, vh10);
-        CHECK_RESULT_CSTR(p, "*undefined*");
+        CHECK_RESULT_CSTR(p, "vpiConstant");
     }
     {
         TestVpiHandle vh10 = vpi_iterate(vpiMemoryWord, vh4);
@@ -297,13 +324,32 @@ int _mon_check_var() {
         vpi_get_value(vh12, &tmpValue);
         CHECK_RESULT(tmpValue.value.integer, 2);
         p = vpi_get_str(vpiType, vh12);
-        CHECK_RESULT_CSTR(p, "*undefined*");
+        CHECK_RESULT_CSTR(p, "vpiConstant");
         TestVpiHandle vh13 = vpi_handle(vpiRightRange, vh11);
         CHECK_RESULT_NZ(vh13);
         vpi_get_value(vh13, &tmpValue);
         CHECK_RESULT(tmpValue.value.integer, 1);
         p = vpi_get_str(vpiType, vh13);
-        CHECK_RESULT_CSTR(p, "*undefined*");
+        CHECK_RESULT_CSTR(p, "vpiConstant");
+    }
+
+    TestVpiHandle vh5 = VPI_HANDLE("quads");
+    CHECK_RESULT_NZ(vh5);
+    {
+        TestVpiHandle vh10 = vpi_handle(vpiLeftRange, vh5);
+        CHECK_RESULT_NZ(vh10);
+        vpi_get_value(vh10, &tmpValue);
+        CHECK_RESULT(tmpValue.value.integer, 2);
+        p = vpi_get_str(vpiType, vh10);
+        CHECK_RESULT_CSTR(p, "vpiConstant");
+    }
+    {
+        TestVpiHandle vh10 = vpi_handle(vpiRightRange, vh5);
+        CHECK_RESULT_NZ(vh10);
+        vpi_get_value(vh10, &tmpValue);
+        CHECK_RESULT(tmpValue.value.integer, 3);
+        p = vpi_get_str(vpiType, vh10);
+        CHECK_RESULT_CSTR(p, "vpiConstant");
     }
 
     return 0;
@@ -316,21 +362,26 @@ int _mon_check_varlist() {
     CHECK_RESULT_NZ(vh2);
 
     TestVpiHandle vh10 = vpi_iterate(vpiReg, vh2);
-    CHECK_RESULT_NZ(vh10.nofree());
+    CHECK_RESULT_NZ(vh10);
+    CHECK_RESULT(vpi_get(vpiType, vh10), vpiIterator);
 
-    TestVpiHandle vh11 = vpi_scan(vh10);
-    CHECK_RESULT_NZ(vh11);
-    p = vpi_get_str(vpiFullName, vh11);
-    CHECK_RESULT_CSTR(p, TestSimulator::rooted("sub.subsig1"));
-
-    TestVpiHandle vh12 = vpi_scan(vh10);
-    CHECK_RESULT_NZ(vh12);
-    p = vpi_get_str(vpiFullName, vh12);
-    CHECK_RESULT_CSTR(p, TestSimulator::rooted("sub.subsig2"));
-
-    TestVpiHandle vh13 = vpi_scan(vh10);
-    CHECK_RESULT(vh13, 0);
-
+    {
+        TestVpiHandle vh11 = vpi_scan(vh10);
+        CHECK_RESULT_NZ(vh11);
+        p = vpi_get_str(vpiFullName, vh11);
+        CHECK_RESULT_CSTR(p, TestSimulator::rooted("sub.subsig1"));
+    }
+    {
+        TestVpiHandle vh12 = vpi_scan(vh10);
+        CHECK_RESULT_NZ(vh12);
+        p = vpi_get_str(vpiFullName, vh12);
+        CHECK_RESULT_CSTR(p, TestSimulator::rooted("sub.subsig2"));
+    }
+    {
+        TestVpiHandle vh13 = vpi_scan(vh10);
+        vh10.freed();  // IEEE 37.2.2 vpi_scan at end does a vpi_release_handle
+        CHECK_RESULT(vh13, 0);
+    }
     return 0;
 }
 
@@ -372,7 +423,17 @@ int _mon_check_quad() {
     TestVpiHandle vhidx2 = vpi_handle_by_index(vh2, 2);
     CHECK_RESULT_NZ(vhidx2);
     TestVpiHandle vhidx3 = vpi_handle_by_index(vh2, 3);
-    CHECK_RESULT_NZ(vhidx2);
+    CHECK_RESULT_NZ(vhidx3);
+
+    // Memory words should not be indexable
+    TestVpiHandle vhidx3idx0 = vpi_handle_by_index(vhidx3, 0);
+    CHECK_RESULT(vhidx3idx0, 0);
+    TestVpiHandle vhidx2idx2 = vpi_handle_by_index(vhidx2, 2);
+    CHECK_RESULT(vhidx2idx2, 0);
+    TestVpiHandle vhidx3idx3 = vpi_handle_by_index(vhidx3, 3);
+    CHECK_RESULT(vhidx3idx3, 0);
+    TestVpiHandle vhidx2idx61 = vpi_handle_by_index(vhidx2, 61);
+    CHECK_RESULT(vhidx2idx61, 0);
 
     v.format = vpiVectorVal;
     v.value.vector = vv;
@@ -420,7 +481,9 @@ int _mon_check_string() {
 
         v.format = vpiStringVal;
         vpi_get_value(vh1, &v);
-        if (vpi_chk_error(&e)) { printf("%%vpi_chk_error : %s\n", e.message); }
+        if (vpi_chk_error(&e)) printf("%%vpi_chk_error : %s\n", e.message);
+
+        (void)vpi_chk_error(NULL);
 
         CHECK_RESULT_CSTR_STRIP(v.value.str, text_test_obs[i].initial);
 
@@ -435,21 +498,24 @@ int _mon_check_putget_str(p_cb_data cb_data) {
     static TestVpiHandle cb;
     static struct {
         TestVpiHandle scope, sig, rfr, check, verbose;
-        char str[128 + 1];  // char per bit plus null terminator
+        std::string str;
         int type;  // value type in .str
         union {
             PLI_INT32 integer;
             s_vpi_vecval vector[4];
         } value;  // reference
     } data[129];
+
     if (cb_data) {
+        if (verbose) vpi_printf(const_cast<char*>("     _mon_check_putget_str callback:\n"));
+
         // this is the callback
         static unsigned int seed = 1;
         s_vpi_time t;
         t.type = vpiSimTime;
         t.high = 0;
         t.low = 0;
-        for (int i = 2; i <= 128; i++) {
+        for (int i = 2; i <= 6; i++) {
             static s_vpi_value v;
             int words = (i + 31) >> 5;
             TEST_MSG("========== %d ==========\n", i);
@@ -466,10 +532,10 @@ int _mon_check_putget_str(p_cb_data cb_data) {
                 vpi_get_value(data[i].sig, &v);
                 TEST_MSG("%s\n", v.value.str);
                 if (data[i].type) {
-                    CHECK_RESULT_CSTR(v.value.str, data[i].str);
+                    CHECK_RESULT_CSTR(v.value.str, data[i].str.c_str());
                 } else {
                     data[i].type = v.format;
-                    strcpy(data[i].str, v.value.str);
+                    data[i].str = std::string(v.value.str);
                 }
             }
 
@@ -490,7 +556,7 @@ int _mon_check_putget_str(p_cb_data cb_data) {
             if (callback_count_strs & 7) {
                 // put same value back - checking encoding/decoding equivalent
                 v.format = data[i].type;
-                v.value.str = data[i].str;
+                v.value.str = (PLI_BYTE8*)(data[i].str.c_str());  // Can't reinterpret_cast
                 vpi_put_value(data[i].sig, &v, &t, vpiNoDelay);
                 v.format = vpiIntVal;
                 v.value.integer = 1;
@@ -508,7 +574,7 @@ int _mon_check_putget_str(p_cb_data cb_data) {
                     TEST_MSG("new value\n");
                     for (int j = 0; j < 4; j++) {
                         data[i].value.vector[j].aval = rand_r(&seed);
-                        if (j == (words - 1)) { data[i].value.vector[j].aval &= mask; }
+                        if (j == (words - 1)) data[i].value.vector[j].aval &= mask;
                         TEST_MSG(" %08x\n", data[i].value.vector[j].aval);
                     }
                     v.value.vector = data[i].value.vector;
@@ -521,11 +587,12 @@ int _mon_check_putget_str(p_cb_data cb_data) {
         }
         if (++callback_count_strs == callback_count_strs_max) {
             int success = vpi_remove_cb(cb);
+            cb.freed();
             CHECK_RESULT_NZ(success);
         };
     } else {
         // setup and install
-        for (int i = 1; i <= 128; i++) {
+        for (int i = 1; i <= 6; i++) {
             char buf[32];
             snprintf(buf, sizeof(buf), TestSimulator::rooted("arr[%d].arr"), i);
             CHECK_RESULT_NZ(data[i].scope = vpi_handle_by_name((PLI_BYTE8*)buf, NULL));
@@ -539,7 +606,7 @@ int _mon_check_putget_str(p_cb_data cb_data) {
 
         static t_cb_data cb_data;
         static s_vpi_value v;
-        static TestVpiHandle count_h = VPI_HANDLE("count");
+        TestVpiHandle count_h = VPI_HANDLE("count");
 
         cb_data.reason = cbValueChange;
         cb_data.cb_rtn = _mon_check_putget_str;  // this function
@@ -549,6 +616,7 @@ int _mon_check_putget_str(p_cb_data cb_data) {
         v.format = vpiIntVal;
 
         cb = vpi_register_cb(&cb_data);
+        // It is legal to free the callback handle immediately if not otherwise needed
         CHECK_RESULT_NZ(cb);
     }
     return 0;
@@ -562,6 +630,7 @@ int _mon_check_vlog_info() {
     CHECK_RESULT_CSTR(vlog_info.argv[1], "+PLUS");
     CHECK_RESULT_CSTR(vlog_info.argv[2], "+INT=1234");
     CHECK_RESULT_CSTR(vlog_info.argv[3], "+STRSTR");
+    CHECK_RESULT_Z(vlog_info.argv[4]);
     if (TestSimulator::is_verilator()) {
         CHECK_RESULT_CSTR(vlog_info.product, "Verilator");
         CHECK_RESULT(strlen(vlog_info.version) > 0, 1);
@@ -569,8 +638,12 @@ int _mon_check_vlog_info() {
     return 0;
 }
 
-int mon_check() {
+extern "C" int mon_check() {
     // Callback from initial block in monitor
+#ifdef TEST_VERBOSE
+    printf("-mon_check()\n");
+#endif
+
     if (int status = _mon_check_mcd()) return status;
     if (int status = _mon_check_callbacks()) return status;
     if (int status = _mon_check_value_callbacks()) return status;
@@ -592,7 +665,7 @@ int mon_check() {
 #ifdef IS_VPI
 
 static int mon_check_vpi() {
-    vpiHandle href = vpi_handle(vpiSysTfCall, 0);
+    TestVpiHandle href = vpi_handle(vpiSysTfCall, 0);
     s_vpi_value vpi_value;
 
     vpi_value.format = vpiIntVal;
@@ -610,8 +683,7 @@ static s_vpi_systf_data vpi_systf_data[] = {{vpiSysFunc, vpiIntFunc, (PLI_BYTE8*
 void vpi_compat_bootstrap(void) {
     p_vpi_systf_data systf_data_p;
     systf_data_p = &(vpi_systf_data[0]);
-    while (systf_data_p->type != 0)
-        vpi_register_systf(systf_data_p++);
+    while (systf_data_p->type != 0) vpi_register_systf(systf_data_p++);
 }
 
 // icarus entry
@@ -621,7 +693,7 @@ void (*vlog_startup_routines[])() = {vpi_compat_bootstrap, 0};
 
 double sc_time_stamp() { return main_time; }
 int main(int argc, char** argv, char** env) {
-    double sim_time = 1100;
+    uint64_t sim_time = 1100;
     Verilated::commandArgs(argc, argv);
     Verilated::debug(0);
 
@@ -645,7 +717,7 @@ int main(int argc, char** argv, char** env) {
     topp->clk = 0;
     main_time += 10;
 
-    while (sc_time_stamp() < sim_time && !Verilated::gotFinish()) {
+    while (vl_time_stamp64() < sim_time && !Verilated::gotFinish()) {
         main_time += 1;
         topp->eval();
         VerilatedVpi::callValueCbs();
@@ -669,7 +741,7 @@ int main(int argc, char** argv, char** env) {
 #endif
 
     VL_DO_DANGLING(delete topp, topp);
-    exit(0L);
+    return 0;
 }
 
 #endif

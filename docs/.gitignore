@@ -1,4 +1,5 @@
 *.1
 *.html
 *.pdf
-Makefile
+_build
+guide/spelling.txt

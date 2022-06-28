@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 if (!$::Driver) { use FindBin; exec("$FindBin::Bin/bootstrap.pl", @ARGV, $0); die; }
 # DESCRIPTION: Verilator: Verilog Test driver/expect definition
 #
@@ -11,6 +11,7 @@ if (!$::Driver) { use FindBin; exec("$FindBin::Bin/bootstrap.pl", @ARGV, $0); di
 scenarios(simulator => 1);
 
 top_filename("t/t_cover_line.v");
+golden_filename("t/t_cover_line.out");
 
 compile(
     verilator_flags2 => ['--cc', '--coverage-line', "t/t_cover_line.vlt"],
@@ -26,9 +27,11 @@ inline_checks();
 run(cmd => ["../bin/verilator_coverage",
             "--annotate", "$Self->{obj_dir}/annotated",
             "$Self->{obj_dir}/coverage.dat",
-    ]);
+            ],
+    verilator_run => 1,
+    );
 
-files_identical("$Self->{obj_dir}/annotated/t_cover_line.v", "t/t_cover_line.out");
+files_identical("$Self->{obj_dir}/annotated/t_cover_line.v", $Self->{golden_filename});
 
 ok(1);
 1;

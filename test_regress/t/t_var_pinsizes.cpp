@@ -5,7 +5,7 @@
 
 #include VM_PREFIX_INCLUDE
 
-VM_PREFIX* tb = NULL;
+VM_PREFIX* tb = nullptr;
 
 double sc_time_stamp() { return 0; }
 
@@ -15,6 +15,7 @@ int main() {
 
     VL_PRINTF("*-* All Finished *-*\n");
     tb->final();
+    VL_DO_DANGLING(delete tb, tb);
     return 0;
 }
 
@@ -23,5 +24,6 @@ int sc_main(int argc, char* argv[]) {
 
     VL_PRINTF("*-* All Finished *-*\n");
     tb->final();
+    VL_DO_DANGLING(delete tb, tb);
     return 0;
 }

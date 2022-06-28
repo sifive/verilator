@@ -6,7 +6,7 @@
 
 #include VM_PREFIX_INCLUDE
 
-VM_PREFIX* tb = NULL;
+VM_PREFIX* tb = nullptr;
 
 double sc_time_stamp() { return 0; }
 
@@ -44,7 +44,7 @@ int main() {
     for (tb->SEL = 0; tb->SEL < 2; tb->SEL++) {
         for (tb->A = 0; tb->A < 4; tb->A++) {
             tb->eval();
-            if (!check()) { pass = false; }
+            if (!check()) pass = false;
         }
     }
 
@@ -54,5 +54,6 @@ int main() {
     } else {
         vl_fatal(__FILE__, __LINE__, "top", "Unexpected results from tristate test\n");
     }
+    VL_DO_DANGLING(delete tb, tb);
     return 0;
 }

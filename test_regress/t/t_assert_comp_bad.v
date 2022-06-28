@@ -7,10 +7,14 @@
 module t (/*AUTOARG*/);
 
    if (1) begin
-      $info("User compile-time info");
-      $warning("User compile-time warning");
+      $info;
+      $info("User elaboration-time info");
+      $warning;
+      $warning("User elaboration-time warning");
       $warning(1);  // Check can convert arguments to format
-      $error("User compile-time error");
+      $error;
+      $error("User elaboration-time error");
+      $fatal(0, "User elaboration-time fatal");
    end
 
 endmodule

@@ -23,11 +23,11 @@ interface the_intf
     outer_thing_t [M-1:0] things;
     logic                 valid;
     modport i (
-	       output things,
-	       output valid);
+               output things,
+               output valid);
     modport t (
-	       input things,
-	       input valid);
+               input things,
+               input valid);
 endinterface
 
 module ThingMuxOH
@@ -39,6 +39,19 @@ module ThingMuxOH
     the_intf.t things_in [NTHINGS-1:0],
     the_intf.i thing_out
     );
+    assign thing_out.valid = things_in[0].valid;
+endmodule
+
+module ThingMuxShort
+  #(
+    parameter NTHINGS = 1,
+    parameter       M = 5 )
+   (
+    input logic [NTHINGS-1:0] select_oh,
+    the_intf.t things_in [NTHINGS],
+    the_intf.i thing_out
+    );
+    assign thing_out.valid = things_in[0].valid;
 endmodule
 
 module Thinker
@@ -48,15 +61,17 @@ module Thinker
    (
     input logic clk,
     input logic reset,
-    input 	unique_id_t uids[0:N-1],
+    input       unique_id_t uids[0:N-1],
     the_intf.t thing_inp,
     the_intf.i thing_out
     );
 
    the_intf #(.M(M)) curr_things [N-1:0] ();
    the_intf #(.M(M)) prev_things [N-1:0] ();
+   the_intf #(.M(M)) s_things [N] ();
    the_intf #(.M(M)) curr_thing ();
    the_intf #(.M(M)) prev_thing ();
+   the_intf #(.M(M)) s_thing ();
 
    logic [N-1:0] select_oh;
 
@@ -77,6 +92,15 @@ module Thinker
     .select_oh( select_oh   ),
     .things_in( prev_things ),
     .thing_out( prev_thing  ));
+
+   // 3rd mux, using short array nomenclature:
+   ThingMuxShort #(
+    .NTHINGS  ( N           ),
+    .M        ( M           ))
+   s_thing_mux(
+    .select_oh( select_oh   ),
+    .things_in( s_things ),
+    .thing_out( s_thing  ));
 
 endmodule
 

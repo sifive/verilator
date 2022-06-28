@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 if (!$::Driver) { use FindBin; exec("$FindBin::Bin/bootstrap.pl", @ARGV, $0); die; }
 # DESCRIPTION: Verilator: Verilog Test driver/expect definition
 #
@@ -19,10 +19,16 @@ compile(
                          "--trace --vpi ",
                          ($Self->cfg_with_threaded
                           ? "--threads 2 $root/include/verilated_threads.cpp" : ""),
+                         ($Self->cfg_with_threaded
+                          ? "--trace-threads 1" : ""),
+                         "--prof-exec", "--prof-pgo",
                          "$root/include/verilated_save.cpp"],
     );
 
 execute(
+    all_run_flags => [" +verilator+prof+exec+file+/dev/null",
+                      " +verilator+prof+vlt+file+/dev/null",
+                      ],
     check_finished => 1,
     );
 
@@ -51,8 +57,9 @@ foreach my $file (sort keys %hit) {
     if (!$hit{$file}
         && $file !~ /_sc/
         && $file !~ /_fst/
+        && $file !~ /_heavy/
         && ($file !~ /_thread/ || $Self->cfg_with_threaded)) {
-        error("Include file not covered by t_verilated_all test: ",$file);
+        error("Include file not covered by t_verilated_all test: ", $file);
     }
 }
 

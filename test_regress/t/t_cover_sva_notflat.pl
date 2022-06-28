@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 if (!$::Driver) { use FindBin; exec("$FindBin::Bin/bootstrap.pl", @ARGV, $0); die; }
 # DESCRIPTION: Verilator: Verilog Test driver/expect definition
 #
@@ -20,11 +20,11 @@ execute(
 
 #if ($Self->{nc}) ... # See t_assert_cover.pl for NC version
 
-# Allow old Perl format dump, or new binary dump
+# Allow old SystemC::Coverage format dump, or new binary dump
 # Check that the hierarchy doesn't include __PVT__
 # Otherwise our coverage reports would look really ugly
 if ($Self->{vlt_all}) {
-    file_grep($Self->{coverage_filename}, qr/(top\.t\.sub.*.cyc_eq_5)/)
+    file_grep($Self->{coverage_filename}, qr/(top\.t\.sub.*.cyc_eq_5)/);
 }
 
 ok(1);

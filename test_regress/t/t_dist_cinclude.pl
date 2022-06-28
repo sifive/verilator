@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 if (!$::Driver) { use FindBin; exec("$FindBin::Bin/bootstrap.pl", @ARGV, $0); die; }
 # DESCRIPTION: Verilator: Verilog Test driver/expect definition
 #
@@ -51,7 +51,7 @@ if (!-r "$root/.git") {
     }
 
     if (keys %names) {
-        error("Files like stdint.h instead of cstdint: ",join(' ',sort keys %names));
+        error("Files like stdint.h instead of cstdint: ", join(' ', sort keys %names));
     }
 }
 

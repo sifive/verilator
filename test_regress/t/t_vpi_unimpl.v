@@ -9,7 +9,7 @@
 `ifdef VERILATOR
 //We call it via $c so we can verify DPI isn't required - see bug572
 `else
-import "DPI-C" context function integer mon_check();
+import "DPI-C" context function int mon_check();
 `endif
 
 module t (/*AUTOARG*/
@@ -25,9 +25,9 @@ extern "C" int mon_check();
 
    input clk;
 
-   reg		onebit		/*verilator public_flat_rw @(posedge clk) */;
+   reg          onebit          /*verilator public_flat_rw @(posedge clk) */;
 
-   integer 	  status;
+   integer        status;
 
    // Test loop
    initial begin

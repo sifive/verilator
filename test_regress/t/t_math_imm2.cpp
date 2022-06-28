@@ -6,10 +6,11 @@
 #include <verilated.h>
 #include "Vt_math_imm2.h"
 
+double sc_time_stamp() { return 0; }
+
 QData MaskVal(int lbit, int hbit) {
     QData val;
-    for (val = 0; lbit <= hbit; lbit++)
-        val |= (1ULL << lbit);
+    for (val = 0; lbit <= hbit; lbit++) val |= (1ULL << lbit);
     return val;
 }
 
@@ -35,21 +36,24 @@ int main(int argc, char* argv[]) {
                         | MaskVal(sim->LowMaskSel_Bot, sim->HighMaskSel_Bot));
 
             if (sim->LogicImm != expected) {
-                printf("%%Error: %d.%d,%d.%d -> %016" VL_PRI64 "x/%016" VL_PRI64 "x -> %016" VL_PRI64 "x (expected %016" VL_PRI64 "x)\n",
-                       sim->LowMaskSel_Top, sim->HighMaskSel_Top,
-                       sim->LowMaskSel_Bot, sim->HighMaskSel_Bot,
-                       sim->LowLogicImm, sim->HighLogicImm,
-                       sim->LogicImm,  expected);
-                errs=1;
+                printf("%%Error: %d.%d,%d.%d -> %016" PRIx64 "/%016" PRIx64 " -> %016" PRIx64
+                       " (expected %016" PRIx64 ")\n",
+                       sim->LowMaskSel_Top, sim->HighMaskSel_Top, sim->LowMaskSel_Bot,
+                       sim->HighMaskSel_Bot, sim->LowLogicImm, sim->HighLogicImm, sim->LogicImm,
+                       expected);
+                errs = 1;
             }
         }
     }
+
+    sim->final();
+    VL_DO_DANGLING(delete sim, sim);
 
     if (errs) {
         vl_stop(__FILE__, __LINE__, "TOP-cpp");
         exit(10);
     } else {
         printf("*-* All Finished *-*\n");
-        exit(0);
+        return 0;
     }
 }

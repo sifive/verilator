@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 if (!$::Driver) { use FindBin; exec("$FindBin::Bin/bootstrap.pl", @ARGV, $0); die; }
 # DESCRIPTION: Verilator: Verilog Test driver/expect definition
 #
@@ -12,7 +12,8 @@ scenarios(vlt => 1);
 
 lint(
     fails => 1,
-    expect_filename => $Self->{golden_filename},
+    # EOF result varies with Bison version, so can't use .out
+    expect => qr/define or other nested inclusion/,
     );
 
 ok(1);

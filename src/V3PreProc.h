@@ -6,7 +6,7 @@
 //
 //*************************************************************************
 //
-// Copyright 2000-2020 by Wilson Snyder. This program is free software; you
+// Copyright 2000-2022 by Wilson Snyder. This program is free software; you
 // can redistribute it and/or modify it under the terms of either the GNU
 // Lesser General Public License Version 3 or the Perl Artistic License
 // Version 2.0.
@@ -14,14 +14,15 @@
 //
 //*************************************************************************
 
-#ifndef _V3PREPROC_H_
-#define _V3PREPROC_H_ 1
+#ifndef VERILATOR_V3PREPROC_H_
+#define VERILATOR_V3PREPROC_H_
 
 #include "config_build.h"
 #include "verilatedos.h"
 
 #include "V3Error.h"
 #include "V3FileLine.h"
+#include "V3Global.h"
 
 #include <map>
 #include <list>
@@ -33,7 +34,7 @@
 class VInFilter;
 class VSpellCheck;
 
-class V3PreProc {
+class V3PreProc VL_NOT_FINAL {
     // This defines a preprocessor.  Functions are virtual so implementation can be hidden.
     // After creating, call open(), then getline() in a loop.  The class will to the rest...
 
@@ -44,13 +45,13 @@ protected:
 public:
     // CONSTANTS
     enum MiscConsts {
-        DEFINE_RECURSION_LEVEL_MAX = 1000,      // How many `def substitutions before an error
-        LINE_TOKEN_MAX = 20000,                 // How many tokens on a line before an error
-        INCLUDE_DEPTH_MAX = 500,                // How many `includes deep before an error
-        STREAM_DEPTH_LEVEL_MAX = 2000,          // How many streams deep (sometimes `def deep) before an error
-        //                                      // Set more than DEFINE_RECURSION_LEVEL_MAX
-        //                                      // or INCLUDE_DEPTH_MAX
-        NEWLINES_VS_TICKLINE = 20               // Use `line in place of this many newlines
+        DEFINE_RECURSION_LEVEL_MAX = 1000,  // How many `def substitutions before an error
+        LINE_TOKEN_MAX = 40000,  // How many tokens on a line before an error
+        INCLUDE_DEPTH_MAX = 500,  // How many `includes deep before an error
+        // Streams deep (sometimes `def deep) before an error.
+        // Set more than DEFINE_RECURSION_LEVEL_MAX or INCLUDE_DEPTH_MAX.
+        STREAM_DEPTH_LEVEL_MAX = 2000,
+        NEWLINES_VS_TICKLINE = 20  // Use `line in place of this many newlines
     };
 
     // ACCESSORS
@@ -61,7 +62,7 @@ public:
     virtual void insertUnreadback(const string& text) = 0;
 
     int debug() const { return m_debug; }
-    void debug(int level) { m_debug = level; }
+    void debug(int level);
 
     FileLine* fileline();  ///< File/Line number for last getline call
 
@@ -80,9 +81,10 @@ public:
     virtual void include(const string& filename) = 0;  // Request a include file be processed
 
     virtual void undef(const string& name) = 0;  // Remove a definition
-    virtual void define(FileLine* fileline, const string& name,
-                        const string& value, const string& params="",
-                        bool cmdline=false) = 0;  // `define without any parameters
+    virtual void define(FileLine* fileline, const string& name, const string& value,
+                        const string& params = "",
+                        bool cmdline = false)
+        = 0;  // `define without any parameters
     virtual void defineCmdLine(FileLine* fileline, const string& name,
                                const string& value) {  // `define without any parameters
         define(fileline, name, value, "", true);
@@ -97,13 +99,12 @@ public:
 
 protected:
     // CONSTRUCTORS
-    V3PreProc() {
-        m_debug = 0;
-    }
+    V3PreProc() { m_debug = 0; }
     void configure(FileLine* fl);
+
 public:
     static V3PreProc* createPreProc(FileLine* fl);
-    virtual ~V3PreProc() {}
+    virtual ~V3PreProc() = default;  // LCOV_EXCL_LINE  // Persistent
 };
 
 #endif  // Guard

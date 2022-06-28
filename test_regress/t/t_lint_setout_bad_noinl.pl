@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 if (!$::Driver) { use FindBin; exec("$FindBin::Bin/bootstrap.pl", @ARGV, $0); die; }
 # DESCRIPTION: Verilator: Verilog Test driver/expect definition
 #
@@ -13,7 +13,7 @@ scenarios(linter => 1);
 top_filename("t/t_lint_setout_bad.v");
 
 lint(
-    verilator_flags2 => ["--lint-only -Oi"],
+    verilator_flags2 => ["--lint-only -fno-inline"],
     fails => 1,
     expect_filename => $Self->{golden_filename},
     );

@@ -12,6 +12,8 @@ module t (/*AUTOARG*/
    );
    input clk;
 
+   parameter TOP_PARAM /*verilator public*/ = 20;
+
    a #(1) a1 ();
    b #(2) b2 ();
 
@@ -25,16 +27,16 @@ module a;
    parameter ONE /*verilator public*/ = 22;
    initial if (ONE != 1) $stop;
 `ifdef VERILATOR
-   initial if ($c32("ONE") != 1) $stop;
+   initial if ($c32("this->ONE") != 1) $stop;
 `endif
 endmodule
 
 module b #(
-	   parameter TWO /*verilator public*/ = 22
-	   );
+           parameter TWO /*verilator public*/ = 22
+           );
    initial if (TWO != 2) $stop;
 `ifdef VERILATOR
-   initial if ($c32("TWO") != 2) $stop;
+   initial if ($c32("this->TWO") != 2) $stop;
 `endif
 endmodule
 

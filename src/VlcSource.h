@@ -6,7 +6,7 @@
 //
 //*************************************************************************
 //
-// Copyright 2003-2020 by Wilson Snyder. This program is free software; you
+// Copyright 2003-2022 by Wilson Snyder. This program is free software; you
 // can redistribute it and/or modify it under the terms of either the GNU
 // Lesser General Public License Version 3 or the Perl Artistic License
 // Version 2.0.
@@ -14,44 +14,42 @@
 //
 //*************************************************************************
 
-#ifndef _VLCSOURCE_H_
-#define _VLCSOURCE_H_ 1
+#ifndef VERILATOR_VLCSOURCE_H_
+#define VERILATOR_VLCSOURCE_H_
 
 #include "config_build.h"
 #include "verilatedos.h"
 
 #include <map>
+#include <utility>
 #include <vector>
 
 //********************************************************************
 // VlcColumnCount - count at specific source file, line and column
 
-class VlcSourceCount {
+class VlcSourceCount final {
 private:
     // MEMBERS
     int m_lineno;  ///< Line number
     int m_column;  ///< Column number
-    vluint64_t m_count;  ///< Count
-    bool m_ok;  ///< Coverage is above threshold
+    uint64_t m_count = 0;  ///< Count
+    bool m_ok = false;  ///< Coverage is above threshold
 
 public:
     // CONSTRUCTORS
-    VlcSourceCount(int lineno, int column) {
-        m_lineno = lineno;
-        m_column = column;
-        m_count = 0;
-        m_ok = false;
-    }
-    ~VlcSourceCount() {}
+    VlcSourceCount(int lineno, int column)
+        : m_lineno{lineno}
+        , m_column{column} {}
+    ~VlcSourceCount() = default;
 
     // ACCESSORS
     int lineno() const { return m_lineno; }
     int column() const { return m_column; }
-    vluint64_t count() const { return m_count; }
+    uint64_t count() const { return m_count; }
     bool ok() const { return m_ok; }
 
     // METHODS
-    void incCount(vluint64_t count, bool ok) {
+    void incCount(uint64_t count, bool ok) {
         m_count += count;
         if (ok) m_ok = true;
     }
@@ -60,25 +58,23 @@ public:
 //********************************************************************
 // VlcSource - source file to annotate
 
-class VlcSource {
+class VlcSource final {
 public:
     // TYPES
-    typedef std::map<int, VlcSourceCount> ColumnMap;  // Map of {column}
-    typedef std::map<int, ColumnMap> LinenoMap;  // Map of {lineno}{column}
+    using ColumnMap = std::map<int, VlcSourceCount>;  // Map of {column}
+    using LinenoMap = std::map<int, ColumnMap>;  // Map of {lineno}{column}
 
 private:
     // MEMBERS
     string m_name;  //< Name of the source file
-    bool m_needed;  //< Need to annotate; has low coverage
+    bool m_needed = false;  //< Need to annotate; has low coverage
     LinenoMap m_lines;  //< Map of each annotated line
 
 public:
     // CONSTRUCTORS
-    explicit VlcSource(const string& name) {
-        m_name = name;
-        m_needed = false;
-    }
-    ~VlcSource() {}
+    explicit VlcSource(const string& name)
+        : m_name{name} {}
+    ~VlcSource() = default;
 
     // ACCESSORS
     const string& name() const { return m_name; }
@@ -87,15 +83,13 @@ public:
     LinenoMap& lines() { return m_lines; }
 
     // METHODS
-    void incCount(int lineno, int column, vluint64_t count, bool ok) {
+    void incCount(int lineno, int column, uint64_t count, bool ok) {
         LinenoMap::iterator lit = m_lines.find(lineno);
-        if (lit == m_lines.end()) {
-            lit = m_lines.insert(make_pair(lineno, ColumnMap())).first;
-        }
+        if (lit == m_lines.end()) lit = m_lines.insert(std::make_pair(lineno, ColumnMap())).first;
         ColumnMap& cmap = lit->second;
         ColumnMap::iterator cit = cmap.find(column);
         if (cit == cmap.end()) {
-            cit = cmap.insert(make_pair(column, VlcSourceCount(lineno, column))).first;
+            cit = cmap.insert(std::make_pair(column, VlcSourceCount(lineno, column))).first;
         }
         VlcSourceCount& sc = cit->second;
         sc.incCount(count, ok);
@@ -105,10 +99,10 @@ public:
 //********************************************************************
 // VlcSources - Container of all source files
 
-class VlcSources {
+class VlcSources final {
 public:
     // TYPES
-    typedef std::map<string, VlcSource> NameMap;
+    using NameMap = std::map<const std::string, VlcSource>;
 
 private:
     // MEMBERS
@@ -116,14 +110,13 @@ private:
 
 public:
     // ITERATORS
-    typedef NameMap::iterator iterator;
+    using iterator = NameMap::iterator;
     NameMap::iterator begin() { return m_sources.begin(); }
     NameMap::iterator end() { return m_sources.end(); }
 
-public:
     // CONSTRUCTORS
-    VlcSources() {}
-    ~VlcSources() {}
+    VlcSources() = default;
+    ~VlcSources() = default;
 
     // METHODS
     VlcSource& findNewSource(const string& name) {
@@ -131,7 +124,7 @@ public:
         if (iter != m_sources.end()) {
             return iter->second;
         } else {
-            iter = m_sources.insert(make_pair(name, VlcSource(name))).first;
+            iter = m_sources.insert(std::make_pair(name, VlcSource(name))).first;
             return iter->second;
         }
     }

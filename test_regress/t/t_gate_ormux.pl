@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 if (!$::Driver) { use FindBin; exec("$FindBin::Bin/bootstrap.pl", @ARGV, $0); die; }
 # DESCRIPTION: Verilator: Verilog Test driver/expect definition
 #
@@ -15,8 +15,12 @@ $Self->{sim_time} = $Self->{cycles} * 10 + 1000;
 
 compile(
     v_flags2 => ["+define+SIM_CYCLES=$Self->{cycles}",],
-    verilator_flags2=>["-Wno-UNOPTTHREADS"],
+    verilator_flags2 => ["-Wno-UNOPTTHREADS", "--stats"],
     );
+
+if ($Self->{vlt}) {
+    file_grep($Self->{stats}, qr/Optimizations, Const bit op reduction\s+(\d+)/i, 1058);
+}
 
 execute(
     );

@@ -6,7 +6,7 @@
 //
 //*************************************************************************
 //
-// Copyright 2009-2020 by Wilson Snyder. This program is free software; you
+// Copyright 2009-2022 by Wilson Snyder. This program is free software; you
 // can redistribute it and/or modify it under the terms of either the GNU
 // Lesser General Public License Version 3 or the Perl Artistic License
 // Version 2.0.
@@ -14,8 +14,8 @@
 //
 //*************************************************************************
 
-#ifndef _V3PARSESYM_H_
-#define _V3PARSESYM_H_ 1
+#ifndef VERILATOR_V3PARSESYM_H_
+#define VERILATOR_V3PARSESYM_H_
 
 #include "config_build.h"
 #include "verilatedos.h"
@@ -26,32 +26,32 @@
 #include "V3SymTable.h"
 
 #include <deque>
+#include <vector>
 
 //######################################################################
 // Symbol table for parsing
 
-class V3ParseSym {
+class V3ParseSym final {
     // TYPES
-    typedef std::vector<VSymEnt*> SymStack;
+    using SymStack = std::vector<VSymEnt*>;
 
 private:
     // MEMBERS
-    static int  s_anonNum;              // Number of next anonymous object (parser use only)
-    VSymGraph   m_syms;                 // Graph of symbol tree
-    VSymEnt*    m_symTableNextId;       // Symbol table for next lexer lookup (parser use only)
-    VSymEnt*    m_symCurrentp;          // Active symbol table for additions/lookups
-    SymStack    m_sympStack;            // Stack of upper nodes with pending symbol tables
+    static int s_anonNum;  // Number of next anonymous object (parser use only)
+    VSymGraph m_syms;  // Graph of symbol tree
+    VSymEnt* m_symTableNextId = nullptr;  // Symbol table for next lexer lookup (parser use only)
+    VSymEnt* m_symCurrentp = nullptr;  // Active symbol table for additions/lookups
+    std::vector<VSymEnt*> m_sympStack;  // Stack of upper nodes with pending symbol tables
 
 public:
     // CONSTRUCTORS
     explicit V3ParseSym(AstNetlist* rootp)
-        : m_syms(rootp) {
+        : m_syms{rootp} {
         s_anonNum = 0;  // Number of next anonymous object
         pushScope(findNewTable(rootp));
-        m_symTableNextId = NULL;
         m_symCurrentp = symCurrentp();
     }
-    ~V3ParseSym() {}
+    ~V3ParseSym() = default;
 
 private:
     // METHODS
@@ -67,22 +67,21 @@ public:
 
     VSymEnt* findNewTable(AstNode* nodep) {
         if (!nodep->user4p()) {
-            VSymEnt* symsp = new VSymEnt(&m_syms, nodep);
+            VSymEnt* const symsp = new VSymEnt(&m_syms, nodep);
             nodep->user4p(symsp);
         }
         return getTable(nodep);
     }
     void nextId(AstNode* entp) {
         if (entp) {
-            UINFO(9,"symTableNextId under "<<entp<<"-"<<entp->type().ascii()<<endl);
+            UINFO(9, "symTableNextId under " << entp << "-" << entp->type().ascii() << endl);
             m_symTableNextId = getTable(entp);
-        }
-        else {
-            UINFO(9,"symTableNextId under NULL"<<endl);
-            m_symTableNextId = NULL;
+        } else {
+            UINFO(9, "symTableNextId under nullptr" << endl);
+            m_symTableNextId = nullptr;
         }
     }
-    void reinsert(AstNode* nodep, VSymEnt* parentp=NULL) {
+    void reinsert(AstNode* nodep, VSymEnt* parentp = nullptr) {
         reinsert(nodep, parentp, nodep->name());
     }
     void reinsert(AstNode* nodep, VSymEnt* parentp, string name) {
@@ -92,51 +91,71 @@ public:
         }
         parentp->reinsert(name, findNewTable(nodep));
     }
-    void pushNew(AstNode* nodep) { pushNewUnder(nodep, NULL); }
+    void pushNew(AstNode* nodep) { pushNewUnder(nodep, nullptr); }
     void pushNewUnder(AstNode* nodep, VSymEnt* parentp) {
         if (!parentp) parentp = symCurrentp();
-        VSymEnt* symp = findNewTable(nodep);  // Will set user4p, which is how we connect table to node
+        VSymEnt* const symp
+            = findNewTable(nodep);  // Will set user4p, which is how we connect table to node
         symp->fallbackp(parentp);
         reinsert(nodep, parentp);
         pushScope(symp);
+    }
+    void pushNewUnderNodeOrCurrent(AstNode* nodep, AstNode* parentp) {
+        if (parentp) {
+            pushNewUnder(nodep, findNewTable(parentp));
+        } else {
+            pushNewUnder(nodep, nullptr);
+        }
     }
     void pushScope(VSymEnt* symp) {
         m_sympStack.push_back(symp);
         m_symCurrentp = symp;
     }
     void popScope(AstNode* nodep) {
-        if (symCurrentp()->nodep() != nodep) {
-            if (debug()) { showUpward(); dump(cout, "-mism: "); }
-            nodep->v3fatalSrc("Symbols suggest ending "<<symCurrentp()->nodep()->prettyTypeName()
-                              <<" but parser thinks ending "<<nodep->prettyTypeName());
+        if (VL_UNCOVERABLE(symCurrentp()->nodep() != nodep)) {  // LCOV_EXCL_START
+            if (debug()) {
+                showUpward();
+                dump(cout, "-mism: ");
+            }
+            nodep->v3fatalSrc("Symbols suggest ending " << symCurrentp()->nodep()->prettyTypeName()
+                                                        << " but parser thinks ending "
+                                                        << nodep->prettyTypeName());
             return;
-        }
+        }  // LCOV_EXCL_STOP
         m_sympStack.pop_back();
         UASSERT_OBJ(!m_sympStack.empty(), nodep, "symbol stack underflow");
         m_symCurrentp = m_sympStack.back();
     }
-    void showUpward() {
-        UINFO(1,"ParseSym Stack:\n");
-        for (SymStack::reverse_iterator it=m_sympStack.rbegin(); it!=m_sympStack.rend(); ++it) {
-            VSymEnt* symp = *it;
-            UINFO(1,"    "<<symp->nodep()<<endl);
+    void showUpward() {  // LCOV_EXCL_START
+        UINFO(1, "ParseSym Stack:\n");
+        for (VSymEnt* const symp : vlstd::reverse_view(m_sympStack)) {
+            UINFO(1, "    " << symp->nodep() << endl);
         }
-        UINFO(1,"ParseSym Current: "<<symCurrentp()->nodep()<<endl);
-    }
-    void dump(std::ostream& os, const string& indent="") {
-        m_syms.dump(os, indent);
-    }
-    AstNode* findEntUpward(const string& name) {
+        UINFO(1, "ParseSym Current: " << symCurrentp()->nodep() << endl);
+    }  // LCOV_EXCL_STOP
+    void dump(std::ostream& os, const string& indent = "") { m_syms.dump(os, indent); }
+    AstNode* findEntUpward(const string& name) const {
         // Lookup the given string as an identifier, return type of the id, scanning upward
-        VSymEnt* foundp = symCurrentp()->findIdFallback(name);
-        if (foundp) return foundp->nodep();
-        else return NULL;
+        VSymEnt* const foundp = symCurrentp()->findIdFallback(name);
+        if (foundp) {
+            return foundp->nodep();
+        } else {
+            return nullptr;
+        }
+    }
+    void importExtends(AstNode* classp) {
+        // Import from package::id_or_star to this
+        VSymEnt* const symp = getTable(classp);
+        UASSERT_OBJ(symp, classp,  // Internal problem, because we earlier found it
+                    "Extends class package not found");
+        // Walk old sym table and reinsert into current table
+        // We let V3LinkDot report the error instead of us
+        symCurrentp()->importFromClass(&m_syms, symp);
     }
     void importItem(AstNode* packagep, const string& id_or_star) {
         // Import from package::id_or_star to this
-        VSymEnt* symp = getTable(packagep);
-        UASSERT_OBJ(symp, packagep,
-                    // Internal problem, because we earlier found pkg to label it an ID__aPACKAGE
+        VSymEnt* const symp = getTable(packagep);
+        UASSERT_OBJ(symp, packagep,  // Internal problem, because we earlier found it
                     "Import package not found");
         // Walk old sym table and reinsert into current table
         // We let V3LinkDot report the error instead of us
@@ -144,9 +163,8 @@ public:
     }
     void exportItem(AstNode* packagep, const string& id_or_star) {
         // Export from this the remote package::id_or_star
-        VSymEnt* symp = getTable(packagep);
-        UASSERT_OBJ(symp, packagep,
-                    // Internal problem, because we earlier found pkg to label it an ID__aPACKAGE
+        VSymEnt* const symp = getTable(packagep);
+        UASSERT_OBJ(symp, packagep,  // Internal problem, because we earlier found it
                     "Export package not found");
         symCurrentp()->exportFromPackage(&m_syms, symp, id_or_star);
     }

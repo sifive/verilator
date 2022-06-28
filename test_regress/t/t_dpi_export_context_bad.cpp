@@ -11,6 +11,7 @@
 
 //======================================================================
 
+// clang-format off
 #if defined(VERILATOR)
 # include "Vt_dpi_export_context_bad__Dpi.h"
 #elif defined(VCS)
@@ -20,10 +21,11 @@
 #else
 # error "Unknown simulator for DPI test"
 #endif
+// clang-format on
 
 #ifdef NEED_EXTERNS
 extern "C" {
-    extern void dpix_task();
+extern void dpix_task();
 }
 #endif
 
@@ -33,7 +35,7 @@ unsigned int main_time = 0;
 
 double sc_time_stamp() { return main_time; }
 
-VM_PREFIX* topp = NULL;
+VM_PREFIX* topp = nullptr;
 
 int main(int argc, char* argv[]) {
     topp = new VM_PREFIX;
@@ -42,5 +44,8 @@ int main(int argc, char* argv[]) {
 
     topp->eval();
     dpix_task();  // Missing svSetScope
+
+    topp->final();
+    VL_DO_DANGLING(delete topp, topp);
     return 1;
 }

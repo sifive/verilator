@@ -6,16 +6,18 @@
 
 // This module will be used as libsecret.a or libsecret.so without
 // exposing the source.
-module secret_impl(
-		   input [31:0]        a,
-		   input [31:0]        b,
-		   output logic [31:0] x,
-		   input 	       clk);
 
-   logic [31:0] 		       accum_q = 0;
-   logic [31:0] 		       secret_value = 9;
+module secret_impl
+  (
+   input [31:0]        a,
+   input [31:0]        b,
+   output logic [31:0] x,
+   input               clk);
 
-   initial $display("%m: initialized");
+   logic [31:0]        accum_q = 0;
+   logic [31:0]        secret_value = 9;
+
+   initial $display("[%0t] %m: initialized", $time);
 
    always @(posedge clk) begin
       accum_q <= accum_q + a;

@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 if (!$::Driver) { use FindBin; exec("$FindBin::Bin/bootstrap.pl", @ARGV, $0); die; }
 # DESCRIPTION: Verilator: Verilog Test driver/expect definition
 #
@@ -12,7 +12,7 @@ scenarios(simulator => 1);
 
 if ($Self->{vlt_all}) {
     compile(
-        verilator_flags2 => ["--exe $Self->{t_dir}/$Self->{name}.cpp"],
+        verilator_flags2 => ["-GTOP_PARAM=30 --exe $Self->{t_dir}/$Self->{name}.cpp"],
         make_top_shell => 0,
         make_main => 0,
         );

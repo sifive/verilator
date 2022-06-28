@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 if (!$::Driver) { use FindBin; exec("$FindBin::Bin/bootstrap.pl", @ARGV, $0); die; }
 # DESCRIPTION: Verilator: Verilog Test driver/expect definition
 #
@@ -20,16 +20,16 @@ pli_filename("t_vpi_get.cpp");
 compile(
     make_top_shell => 0,
     make_main => 0,
-    verilator_flags2 => ["-CFLAGS '-DVL_DEBUG -ggdb' --exe --vpi"
-                         ." --public-flat-rw --prefix Vt_vpi_get --no-l2name"
-                         ." $Self->{t_dir}/t_vpi_get.cpp"],
+    verilator_flags2 => ["--exe --vpi"
+                         . " --public-flat-rw --prefix Vt_vpi_get --no-l2name"
+                         . " $Self->{t_dir}/t_vpi_get.cpp"],
     make_pli => 1,
     iv_flags2 => ["-g2005-sv -D USE_VPI_NOT_DPI"],
     v_flags2 => ["+define+USE_VPI_NOT_DPI"],
 );
 
 execute(
-    iv_pli => 1,
+    use_libvpi => 1,
     check_finished => 1
 );
 

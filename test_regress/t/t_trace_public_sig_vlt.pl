@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 if (!$::Driver) { use FindBin; exec("$FindBin::Bin/bootstrap.pl", @ARGV, $0); die; }
 # DESCRIPTION: Verilator: Verilog Test driver/expect definition
 #
@@ -11,6 +11,8 @@ if (!$::Driver) { use FindBin; exec("$FindBin::Bin/bootstrap.pl", @ARGV, $0); di
 scenarios(vlt_all => 1);
 
 top_filename("t/t_trace_public.v");
+golden_filename("t/t_trace_public.out");
+
 my $out_filename = "$Self->{obj_dir}/V$Self->{name}.xml";
 
 compile(
@@ -20,15 +22,14 @@ compile(
     );
 
 if ($Self->{vlt_all}) {
-    file_grep("$out_filename", qr/\<var fl="e47" loc=".*?" name="GSR" dtype_id="1" vartype="logic" origName="GSR" public="true" public_flat_rd="true" public_flat_rw="true"\/\>/i);
+    file_grep("$out_filename", qr/\<var loc="e,47,.*?" name="GSR" dtype_id="1" vartype="logic" origName="GSR" public="true" public_flat_rd="true" public_flat_rw="true"\/\>/i);
 }
 
 execute(
     check_finished => 1,
     );
 
-vcd_identical("$Self->{obj_dir}/simx.vcd",
-              "t/t_trace_public.out");
+vcd_identical("$Self->{obj_dir}/simx.vcd", $Self->{golden_filename});
 
 # vcd_identical doesn't detect "$var a.b;" vs "$scope module a; $var b;"
 file_grep("$Self->{obj_dir}/simx.vcd", qr/module glbl/i);

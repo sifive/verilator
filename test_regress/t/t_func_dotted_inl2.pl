@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 if (!$::Driver) { use FindBin; exec("$FindBin::Bin/bootstrap.pl", @ARGV, $0); die; }
 # DESCRIPTION: Verilator: Verilog Test driver/expect definition
 #
@@ -18,8 +18,8 @@ compile(
     );
 
 if ($Self->{vlt_all}) {
-    file_grep("$out_filename", qr/\<instance fl="d87" loc=".*?" name="t.ma0.mb0" defName="mb" origName="mb0"\/\>/i);
-    file_grep("$out_filename", qr/\<module fl="d99" loc=".*?" name="mb" origName="mb"\>/i);
+    file_grep("$out_filename", qr/\<instance loc="d,87,.*?" name="t.ma0.mb0" defName="mb" origName="mb0"\/\>/i);
+    file_grep("$out_filename", qr/\<module loc="d,99,.*?" name="mb" origName="mb"\>/i);
 }
 
 execute(

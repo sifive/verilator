@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 if (!$::Driver) { use FindBin; exec("$FindBin::Bin/bootstrap.pl", @ARGV, $0); die; }
 # DESCRIPTION: Verilator: Verilog Test driver/expect definition
 #
@@ -9,15 +9,18 @@ if (!$::Driver) { use FindBin; exec("$FindBin::Bin/bootstrap.pl", @ARGV, $0); di
 # SPDX-License-Identifier: LGPL-3.0-only OR Artistic-2.0
 
 top_filename("t_gen_genblk.v");
+golden_filename("t/t_gen_genblk.out");
 
 scenarios(simulator => 1);
 
+$Self->{sim_time} = 11000;
+
 compile(
-    v_flags2 => ["-Oi"],
+    v_flags2 => ["-fno-inline"],
     );
 
 execute(
-    expect_filename => "t/t_gen_genblk.out",
+    expect_filename => $Self->{golden_filename},
     );
 
 ok(1);

@@ -19,7 +19,7 @@ int main(int argc, char** argv, char** env) {
     // e.g. examples/c_tracing.
 
     // Prevent unused variable warnings
-    if (0 && argc && argv && env) {}
+    if (false && argc && argv && env) {}
 
     // Construct the Verilated model, from Vtop.h generated from Verilating "top.v"
     Vtop* top = new Vtop;
@@ -37,6 +37,6 @@ int main(int argc, char** argv, char** env) {
     // Destroy model
     delete top;
 
-    // Fin
-    exit(0);
+    // Return good completion status
+    return 0;
 }

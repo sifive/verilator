@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 if (!$::Driver) { use FindBin; exec("$FindBin::Bin/bootstrap.pl", @ARGV, $0); die; }
 # DESCRIPTION: Verilator: Verilog Test driver/expect definition
 #
@@ -13,7 +13,7 @@ scenarios(simulator => 1);
 top_filename("t/t_interface2.v");
 
 compile(
-    verilator_flags2 => ["--top-module t -Oi"],
+    verilator_flags2 => ["--top-module t -fno-inline"],
     );
 
 execute(

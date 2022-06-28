@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 if (!$::Driver) { use FindBin; exec("$FindBin::Bin/bootstrap.pl", @ARGV, $0); die; }
 # DESCRIPTION: Verilator: Verilog Test driver/expect definition
 #
@@ -11,7 +11,7 @@ if (!$::Driver) { use FindBin; exec("$FindBin::Bin/bootstrap.pl", @ARGV, $0); di
 scenarios(simulator => 1);
 
 compile(
-    verilator_flags2=>["--stats"],
+    verilator_flags2 => ["--stats"],
     );
 
 execute(
@@ -20,7 +20,7 @@ execute(
     );
 
 file_grep("$Self->{obj_dir}/$Self->{VM_PREFIX}__stats.txt",
-          qr/Node count, DISPLAY \s+ 32 \s+ 25 \s+ 25 \s+ 25/);
+          qr/Node count, DISPLAY \s+ 41 \s+ 27 \s+ 27 \s+ 6/);
 
 ok(1);
 1;

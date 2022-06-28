@@ -9,13 +9,15 @@
 interface test_if #(parameter integer FOO = 1);
 
    // Interface variable
-   logic 	data;
+   logic        data;
+
+   localparam integer BAR = FOO + 1;
 
    // Modport
    modport mp(
               import  getFoo,
-	      output  data
-	      );
+              output  data
+              );
 
    function integer getFoo ();
       return FOO;
@@ -29,16 +31,16 @@ endfunction
 
 
 module t (/*AUTOARG*/
-	  // Inputs
-	  clk
-	  );
+          // Inputs
+          clk
+          );
    input clk;
 
    test_if #( .FOO (identity(5)) ) the_interface ();
    test_if #( .FOO (identity(7)) ) array_interface [1:0] ();
 
    testmod testmod_i (.clk (clk),
-		      .intf (the_interface),
+                      .intf (the_interface),
                       .intf_no_mp (the_interface),
                       .intf_array (array_interface)
                       );
@@ -50,15 +52,15 @@ module t (/*AUTOARG*/
    initial begin
       if (THE_TOP_FOO != 5) begin
          $display("%%Error: THE_TOP_FOO = %0d", THE_TOP_FOO);
-	 $stop;
+         $stop;
       end
       if (THE_TOP_FOO_BITS != 64) begin
          $display("%%Error: THE_TOP_FOO_BITS = %0d", THE_TOP_FOO_BITS);
-	 $stop;
+         $stop;
       end
       if (THE_ARRAY_FOO != 7) begin
          $display("%%Error: THE_ARRAY_FOO = %0d", THE_ARRAY_FOO);
-	 $stop;
+         $stop;
       end
    end
 
@@ -76,11 +78,14 @@ module testmod
    localparam THE_FOO = intf.FOO;
    localparam THE_OTHER_FOO = intf_no_mp.FOO;
    localparam THE_ARRAY_FOO = intf_array[0].FOO;
+   localparam THE_BAR = intf.BAR;
+   localparam THE_OTHER_BAR = intf_no_mp.BAR;
+   localparam THE_ARRAY_BAR = intf_array[0].BAR;
 
    always @(posedge clk) begin
       if (THE_FOO != 5) begin
          $display("%%Error: THE_FOO = %0d", THE_FOO);
-	 $stop;
+         $stop;
       end
       if (THE_OTHER_FOO != 5) begin
          $display("%%Error: THE_OTHER_FOO = %0d", THE_OTHER_FOO);
@@ -92,7 +97,7 @@ module testmod
       end
       if (intf.FOO != 5) begin
          $display("%%Error: intf.FOO = %0d", intf.FOO);
-	 $stop;
+         $stop;
       end
       if (intf_no_mp.FOO != 5) begin
          $display("%%Error: intf_no_mp.FOO = %0d", intf_no_mp.FOO);
@@ -104,8 +109,32 @@ module testmod
       end
       //      if (i.getFoo() != 5) begin
       //         $display("%%Error: i.getFoo() = %0d", i.getFoo());
-      //	 $stop;
+      //         $stop;
       //      end
+      if (THE_BAR != 6) begin
+         $display("%%Error: THE_BAR = %0d", THE_BAR);
+         $stop;
+      end
+      if (THE_OTHER_BAR != 6) begin
+         $display("%%Error: THE_OTHER_BAR = %0d", THE_OTHER_BAR);
+         $stop;
+      end
+      if (THE_ARRAY_BAR != 8) begin
+         $display("%%Error: THE_ARRAY_BAR = %0d", THE_ARRAY_BAR);
+         $stop;
+      end
+      if (intf.BAR != 6) begin
+         $display("%%Error: intf.BAR = %0d", intf.BAR);
+         $stop;
+      end
+      if (intf_no_mp.BAR != 6) begin
+         $display("%%Error: intf_no_mp.BAR = %0d", intf_no_mp.BAR);
+         $stop;
+      end
+      if (intf_array[0].BAR != 8) begin
+         $display("%%Error: intf_array[0].BAR = %0d", intf_array[0].BAR);
+         $stop;
+      end
       $write("*-* All Finished *-*\n");
       $finish;
    end

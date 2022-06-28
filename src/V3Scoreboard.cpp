@@ -6,7 +6,7 @@
 //
 //*************************************************************************
 //
-// Copyright 2003-2020 by Wilson Snyder. This program is free software; you
+// Copyright 2003-2022 by Wilson Snyder. This program is free software; you
 // can redistribute it and/or modify it under the terms of either the GNU
 // Lesser General Public License Version 3 or the Perl Artistic License
 // Version 2.0.
@@ -19,23 +19,22 @@
 
 #include "V3Scoreboard.h"
 
-class ScoreboardTestElem {
+class ScoreboardTestElem final {
 public:
     // MEMBERS
     uint32_t m_score;
     uint32_t m_id;
     // CONSTRUCTORS
-    explicit ScoreboardTestElem(uint32_t score) : m_score(score) {
+    explicit ScoreboardTestElem(uint32_t score)
+        : m_score{score} {
         static uint32_t s_serial = 0;
         m_id = ++s_serial;
     }
-    ScoreboardTestElem() {}
+    ScoreboardTestElem() = default;
     // METHODS
     static uint32_t scoreFn(const ScoreboardTestElem* elp) { return elp->m_score; }
 
-    bool operator< (const ScoreboardTestElem& other) const {
-        return m_id < other.m_id;
-    }
+    bool operator<(const ScoreboardTestElem& other) const { return m_id < other.m_id; }
 };
 
 void V3ScoreboardBase::selfTest() {
@@ -52,9 +51,8 @@ void V3ScoreboardBase::selfTest() {
     sb.addElem(&e3);
 
     UASSERT(sb.needsRescore(), "SelfTest: Newly filled sb should need a rescore.");
-    UASSERT(sb.needsRescore(&e1),
-            "SelfTest: Individual newly-added element should need rescore");
-    UASSERT(NULL == sb.bestp(),
+    UASSERT(sb.needsRescore(&e1), "SelfTest: Individual newly-added element should need rescore");
+    UASSERT(nullptr == sb.bestp(),
             "SelfTest: Newly filled sb should have nothing eligible for Bestp()");
 
     sb.rescore();
@@ -64,14 +62,12 @@ void V3ScoreboardBase::selfTest() {
             "SelfTest: Newly rescored sb should not need an element rescored");
     UASSERT(e2.m_score == sb.cachedScore(&e2),
             "SelfTest: Cached score should match current score");
-    UASSERT(&e1 == sb.bestp(),
-            "SelfTest: Should return element with lowest (best) score");
+    UASSERT(&e1 == sb.bestp(), "SelfTest: Should return element with lowest (best) score");
 
     // Change one element's score
     sb.hintScoreChanged(&e2);
     e2.m_score = 21;
-    UASSERT(sb.needsRescore(&e2),
-            "SelfTest: Should need rescore on elem after hintScoreChanged");
+    UASSERT(sb.needsRescore(&e2), "SelfTest: Should need rescore on elem after hintScoreChanged");
 
     // Remove an element
     UASSERT(sb.contains(&e1), "SelfTest: e1 should be there");

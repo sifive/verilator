@@ -5,7 +5,7 @@
 
 #include "Vt_tri_select.h"
 
-Vt_tri_select* tb = NULL;
+VM_PREFIX* tb = nullptr;
 
 double sc_time_stamp() { return 0; }
 
@@ -17,11 +17,10 @@ bool check() {
     bool verbose = false;
 #endif
 
-    int Y = ((tb->OE1) & (!tb->OE2))
-                ? tb->A1
-                : ((!tb->OE1) & (tb->OE2))
-                      ? tb->A2
-                      : ((tb->OE1) & (tb->OE2)) ? (tb->A1 | tb->A2) : 3;  // pullup
+    int Y = ((tb->OE1) & (!tb->OE2))   ? tb->A1
+            : ((!tb->OE1) & (tb->OE2)) ? tb->A2
+            : ((tb->OE1) & (tb->OE2))  ? (tb->A1 | tb->A2)
+                                       : 3;  // pullup
 
     int W = (((tb->OE2) ? (tb->A2 & 0x1) : 0) << tb->A1)
             | (((tb->OE1) ? (tb->A2 >> 1) & 0x1 : 0) << tb->A2);
@@ -54,7 +53,7 @@ int main() {
             for (tb->A1 = 0; tb->A1 < 4; tb->A1++) {
                 for (tb->A2 = 0; tb->A2 < 4; tb->A2++) {
                     tb->eval();
-                    if (!check()) { pass = false; }
+                    if (!check()) pass = false;
                 }
             }
         }
@@ -66,5 +65,6 @@ int main() {
     } else {
         vl_fatal(__FILE__, __LINE__, "top", "Unexpected results from t_tri_select\n");
     }
+    VL_DO_DANGLING(delete tb, tb);
     return 0;
 }

@@ -6,7 +6,7 @@
 
 #include VM_PREFIX_INCLUDE
 
-VM_PREFIX* tb = NULL;
+VM_PREFIX* tb = nullptr;
 bool pass = true;
 
 double sc_time_stamp() { return 0; }
@@ -19,6 +19,9 @@ int main()
 {
     Verilated::debug(0);
     tb = new VM_PREFIX("tb");
+
+    tb->final();
+    VL_DO_DANGLING(delete tb, tb);
 
     // Just a constructor test
     VL_PRINTF("*-* All Finished *-*\n");

@@ -36,6 +36,10 @@ module t;
    parameter real22 = 0.1;
    parameter real31 = 0.1;
    parameter real32 = 0.1;
+   parameter real41 = 0.1;
+   parameter real42 = 0.1;
+   parameter real51 = 0.1;
+   parameter real52 = 0.1;
 
    parameter int11 = 1;
    parameter int12 = 1;
@@ -49,6 +53,8 @@ module t;
    parameter int52 = 1;
    parameter int61 = 1;
    parameter int62 = 1;
+   parameter int71 = 1;
+   parameter int72 = 1;
 
    initial begin
       `check(string1,"New String");
@@ -63,6 +69,10 @@ module t;
       `check(real22,400);
       `check(real31,20);
       `check(real32,20);
+      `check(real41,582.5);
+      `check(real42,582.5);
+      `check(real51,145.5);
+      `check(real52,145.5);
       `check(int11,16);
       `check(int12,16);
       `check(int21,16);
@@ -75,6 +85,11 @@ module t;
       `check(int52,32'hdeadbeef);
       `check(int61,32'hdeadbeef);
       `check(int62,32'hdeadbeef);
+      `check(int71,-1000);
+      `check(int72,-1000);
+
+      // Check parameter assigned simple integer literal is signed
+      if ((int11 << 27) >>> 31 != -1) $stop;
 
       $write("*-* All Finished *-*\n");
       $finish;

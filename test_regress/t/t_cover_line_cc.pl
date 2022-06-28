@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 if (!$::Driver) { use FindBin; exec("$FindBin::Bin/bootstrap.pl", @ARGV, $0); die; }
 # DESCRIPTION: Verilator: Verilog Test driver/expect definition
 #
@@ -11,6 +11,7 @@ if (!$::Driver) { use FindBin; exec("$FindBin::Bin/bootstrap.pl", @ARGV, $0); di
 scenarios(simulator => 1);
 
 top_filename("t/t_cover_line.v");
+golden_filename("t/t_cover_line.out");
 
 compile(
     verilator_flags2 => ['--cc --coverage-line +define+ATTRIBUTE'],
@@ -25,10 +26,32 @@ inline_checks();
 
 run(cmd => ["../bin/verilator_coverage",
             "--annotate", "$Self->{obj_dir}/annotated",
-            "$Self->{obj_dir}/coverage.dat",
-    ]);
+            "$Self->{obj_dir}/coverage.dat"],
+    verilator_run => 1,
+    );
 
-files_identical("$Self->{obj_dir}/annotated/t_cover_line.v", "t/t_cover_line.out");
+files_identical("$Self->{obj_dir}/annotated/t_cover_line.v", $Self->{golden_filename});
+
+# Also try lcov
+run(cmd => ["../bin/verilator_coverage",
+            "--write-info", "$Self->{obj_dir}/coverage.info",
+            "$Self->{obj_dir}/coverage.dat"],
+    verilator_run => 1,
+    );
+
+# If installed
+if (`lcov --version` !~ /version/i
+    || `genhtml --version` !~ /version ([0-9.]+)/i) {
+    skip("lcov or genhtml not installed");
+} elsif ($1 < 1.14) {
+    skip("lcov or genhtml too old (version $1), need version >= 1.14");
+} else {
+    run(cmd => ["genhtml",
+                "$Self->{obj_dir}/coverage.info",
+                "--output-directory $Self->{obj_dir}/html",
+        ]);
+}
+
 
 ok(1);
 1;

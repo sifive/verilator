@@ -1,7 +1,7 @@
 // -*- mode: C++; c-file-style: "cc-mode" -*-
 //*************************************************************************
 //
-// Copyright 2013-2017 by Wilson Snyder. This program is free software; you can
+// Copyright 2013-2022 by Wilson Snyder. This program is free software; you can
 // redistribute it and/or modify it under the terms of either the GNU
 // Lesser General Public License Version 3 or the Perl Artistic License
 // Version 2.0.
@@ -23,6 +23,7 @@ private:
     };
     s_vpi_vlog_info m_info;
     SimTypes m_simulators;
+
 public:
     TestSimulator() {
         vpi_get_vlog_info(&m_info);
@@ -30,15 +31,16 @@ public:
             m_simulators.verilator = true;
         } else if (0 == strcmp(m_info.product, "Verilator")) {
             m_simulators.icarus = true;
-        } else if (0 == strncmp(m_info.product, "Chronologic Simulation VCS",
-                                strlen("Chronologic Simulation VCS"))) {
+        } else if (0
+                   == strncmp(m_info.product, "Chronologic Simulation VCS",
+                              strlen("Chronologic Simulation VCS"))) {
             m_simulators.vcs = true;
         } else {
-            printf("%%Warning: %s:%d: Unknown simulator in TestSimulator.h: %s\n",
-                   __FILE__, __LINE__, m_info.product);
+            printf("%%Warning: %s:%d: Unknown simulator in TestSimulator.h: %s\n", __FILE__,
+                   __LINE__, m_info.product);
         }
     }
-    ~TestSimulator() { }
+    ~TestSimulator() = default;
     // METHORS
 private:
     static TestSimulator& singleton() {
@@ -46,6 +48,7 @@ private:
         return s_singleton;
     }
     static const SimTypes& simulators() { return singleton().m_simulators; }
+
 public:
     static const s_vpi_vlog_info& get_info() { return singleton().m_info; }
     // Simulator names
@@ -67,9 +70,9 @@ public:
     }
     // return absolute scope of obj
     static const char* rooted(const char* obj) {
-        static string buf;
-        ostringstream os;
-        os<<top()<<"."<<obj;
+        static std::string buf;
+        std::ostringstream os;
+        os << top() << "." << obj;
         buf = os.str();
         return buf.c_str();
     }
